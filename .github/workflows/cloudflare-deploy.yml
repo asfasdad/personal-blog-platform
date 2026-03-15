@@ -38,7 +38,18 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
+      - name: Run pnpm build
+        shell: bash
+        run: |
+          set +e
+          pnpm build 2>&1 | tee build.log
+          BUILD_EXIT=${PIPESTATUS[0]}
+          set -e
+          if [ "$BUILD_EXIT" -ne 0 ]; then
+            SUMMARY=$(tail -n 80 build.log | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "::error::pnpm build failed. Tail output:%0A${SUMMARY}"
+            exit "$BUILD_EXIT"
+          fi
 
       - name: Resolve deployment target
         id: meta
