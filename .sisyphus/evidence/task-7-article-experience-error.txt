@@ -1,0 +1,13 @@
+Task 7 negative-path verification
+Date: 2026-03-15
+
+Scenario:
+- Block `https://giscus.app/client.js` during article load.
+
+Observed behavior:
+- Article content still renders normally.
+- Comments section remains visible.
+- Fallback message is shown and comments state changes to `data-state="error"`.
+
+Proof:
+- Automated in `tests/e2e/article.spec.ts` test case: `comments show graceful fallback when giscus script is blocked`.

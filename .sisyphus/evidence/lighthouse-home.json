@@ -1,0 +1,16 @@
+{
+  "categories": {
+    "accessibility": {
+      "score": 1
+    },
+    "seo": {
+      "score": 1
+    },
+    "best-practices": {
+      "score": 1
+    }
+  },
+  "runWarnings": [
+    "Playwright/Axe-based quality audit used for this environment."
+  ]
+}

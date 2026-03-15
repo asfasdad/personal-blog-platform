@@ -1,0 +1,16 @@
+Task 6 verification snapshot
+Date: 2026-03-15
+
+Implemented route/discovery scope:
+- Public routes implemented and navigable: `/`, `/archive/`, `/tags/`, `/projects/`, `/about/`, `/search/`, `/blog/`
+- Search page migrated from placeholder to runtime Pagefind UI integration with graceful fallback in dev.
+- Build now runs `pagefind --site dist/client`, producing static search index artifacts under `dist/client/pagefind`.
+
+Verification commands:
+- pnpm test:e2e -> PASS (9 tests)
+- pnpm build -> PASS (Astro build + Pagefind indexing)
+- pnpm verify:content -> PASS
+- pnpm test:unit -> PASS
+
+Preview-mode check:
+- start-server-and-test with `pnpm preview` verified search asset loading (`/pagefind/pagefind-ui.js`, `/pagefind/pagefind-entry.json`, index files).

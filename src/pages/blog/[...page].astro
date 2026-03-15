@@ -1,0 +1,49 @@
+---
+import { getCollection } from "astro:content";
+import type { GetStaticPaths } from "astro";
+import type { CollectionEntry } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import Card from "@/components/Card.astro";
+import Pagination from "@/components/Pagination.astro";
+import getSortedPosts from "@/utils/getSortedPosts";
+import { SITE } from "@/config";
+
+export const prerender = process.env.E2E_PRERENDER === "1" || process.env.LIGHTHOUSE_STATIC === "1";
+
+export const getStaticPaths = (async ({ paginate }) => {
+  const posts = await getCollection("blog");
+  const sortedPosts = getSortedPosts(posts);
+
+  return paginate(sortedPosts, { pageSize: SITE.postPerPage });
+}) satisfies GetStaticPaths;
+
+interface Props {
+  page: {
+    data: CollectionEntry<"blog">[];
+    currentPage: number;
+    lastPage: number;
+    url: {
+      prev: string | undefined;
+      next: string | undefined;
+    };
+  };
+}
+
+const { page } = Astro.props;
+---
+
+<Layout title={`Blog | ${SITE.title}`}>
+  <Header />
+  <main id="main-content" class="app-layout">
+    <h1 class="text-2xl font-semibold sm:text-3xl">Blog</h1>
+    <ul>
+      {page.data.map(data => (
+        <Card {...data} />
+      ))}
+    </ul>
+  </main>
+  <Pagination {page} />
+  <Footer />
+</Layout>

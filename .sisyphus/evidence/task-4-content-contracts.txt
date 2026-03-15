@@ -1,0 +1,19 @@
+Task 4 verification snapshot
+Date: 2026-03-15
+
+Implemented contracts:
+- Content collections: `blog`, `projects` in `src/content.config.ts`
+- Route inventory present: `/`, `/blog/[slug]`, `/tags/[tag]`, `/archive`, `/projects`, `/about`, `/rss.xml`, `/search`
+- Link/path migration: article paths now generated as `/blog/*`
+
+Commands executed and outcomes:
+- pnpm verify:content -> PASS
+- pnpm test:unit -> PASS
+- pnpm test:integration -> PASS
+- pnpm test:e2e -> PASS
+- pnpm build -> PASS
+
+Artifact checks:
+- dist/client/rss.xml exists
+- dist/client/sitemap-index.xml exists
+- dist/client/sitemap-0.xml exists

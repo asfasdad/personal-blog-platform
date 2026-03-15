@@ -1,0 +1,17 @@
+Task 4 negative-path verification
+Date: 2026-03-15
+
+Commands executed (all expected to fail with non-zero exit code):
+- pnpm verify:content -- --fixture tests/fixtures/content/invalid/missing-title.mdx
+- pnpm verify:content -- --fixture tests/fixtures/content/invalid/missing-description.mdx
+- pnpm verify:content -- --fixture tests/fixtures/content/invalid/invalid-publish-at.mdx
+- pnpm verify:content -- --fixture tests/fixtures/content/duplicate-slug
+
+Observed failures:
+- missing-title fixture -> `missing required frontmatter field \`title\``
+- missing-description fixture -> `missing required frontmatter field \`description\``
+- invalid-publish-at fixture -> `invalid date value for \`publishAt\``
+- duplicate-slug fixture -> `duplicate slug` reported with conflicting file path
+
+Conclusion:
+- Content contract guardrails reject all required invalid scenarios.

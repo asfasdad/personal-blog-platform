@@ -1,0 +1,23 @@
+export const SITE = {
+  website: "https://example.com", // replace this with your deployed domain
+  author: "Author Name",
+  profile: "https://example.com/about",
+  desc: "A personal blog built with Astro.",
+  title: "Personal Blog",
+  ogImage: "og.png",
+  lightAndDarkMode: true,
+  postPerIndex: 4,
+  postPerPage: 4,
+  scheduledPostMargin: 15 * 60 * 1000, // 15 minutes
+  showArchives: true,
+  showBackButton: true, // show back button in post detail
+  editPost: {
+    enabled: false,
+    text: "Edit page",
+    url: "https://github.com/example/repo/edit/main/",
+  },
+  dynamicOgImage: false,
+  dir: "ltr", // "rtl" | "auto"
+  lang: "en", // html lang code. Set this empty and default will be "en"
+  timezone: "Asia/Shanghai", // Default global timezone (IANA format)
+} as const;

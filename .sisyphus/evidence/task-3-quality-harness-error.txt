@@ -1,0 +1,13 @@
+Task 3 negative-path verification
+Date: 2026-03-15
+
+Command executed:
+- pnpm verify:content -- --fixture tests/fixtures/content/invalid/missing-title.mdx
+
+Observed result:
+- Exit code: non-zero (expected)
+- Error message includes:
+  missing required frontmatter field `title`
+
+Conclusion:
+- Invalid content is correctly rejected by the fixture validator.

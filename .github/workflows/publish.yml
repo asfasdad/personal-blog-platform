@@ -1,0 +1,21 @@
+name: publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Trigger source action
+        required: false
+        default: publish
+      requestedAt:
+        description: Request timestamp
+        required: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Publish requested"
+          echo "Action: ${{ github.event.inputs.action || 'publish' }}"
+          echo "Requested at: ${{ github.event.inputs.requestedAt || 'unknown' }}"

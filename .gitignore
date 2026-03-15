@@ -1,0 +1,11 @@
+node_modules/
+.env
+.env.local
+dist/
+.cache/
+.astro/
+.wrangler/
+build/
+out/
+test-results/
+playwright-report/

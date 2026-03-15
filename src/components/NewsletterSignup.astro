@@ -1,0 +1,128 @@
+---
+---
+
+<section
+  id="newsletter"
+  class="mt-8 rounded-2xl border border-border bg-surface px-6 py-8 shadow-[var(--shadow-soft)]"
+  data-pagefind-ignore
+>
+  <h2 class="text-2xl font-semibold tracking-wide">Newsletter</h2>
+  <p class="mt-2 max-w-2xl text-foreground/85">
+    Get new posts and project notes in your inbox. No spam.
+  </p>
+
+  <form id="newsletter-form" class="mt-5 flex flex-col gap-3 sm:flex-row sm:items-start" novalidate>
+    <div class="w-full">
+      <label class="ui-label mb-1 block text-sm" for="newsletter-email">Email address</label>
+      <input
+        id="newsletter-email"
+        name="email"
+        type="email"
+        required
+        autocomplete="email"
+        placeholder="you@example.com"
+        class="w-full rounded-lg border border-border bg-background px-3 py-2"
+        aria-describedby="newsletter-error newsletter-message"
+      />
+      <p id="newsletter-error" class="mt-1 hidden text-sm text-red-700"></p>
+    </div>
+
+    <button
+      id="newsletter-submit"
+      type="submit"
+      class="ui-label rounded-lg border border-border bg-surface-strong px-4 py-2 hover:bg-muted"
+    >
+      Subscribe
+    </button>
+  </form>
+
+  <p id="newsletter-message" class="mt-3 text-sm text-foreground/85" aria-live="polite"></p>
+
+  <script is:inline>
+    const form = document.querySelector("#newsletter-form");
+    const emailInput = document.querySelector("#newsletter-email");
+    const submitButton = document.querySelector("#newsletter-submit");
+    const errorNode = document.querySelector("#newsletter-error");
+    const messageNode = document.querySelector("#newsletter-message");
+
+    const setError = (message) => {
+      if (!(errorNode instanceof HTMLElement)) return;
+      if (!message) {
+        errorNode.textContent = "";
+        errorNode.classList.add("hidden");
+        return;
+      }
+      errorNode.textContent = message;
+      errorNode.classList.remove("hidden");
+    };
+
+    const setMessage = message => {
+      if (!(messageNode instanceof HTMLElement)) return;
+      messageNode.textContent = message;
+    };
+
+    const setSubmitting = isSubmitting => {
+      if (submitButton instanceof HTMLButtonElement) {
+        submitButton.disabled = isSubmitting;
+        submitButton.textContent = isSubmitting ? "Subscribing..." : "Subscribe";
+      }
+    };
+
+    const isValidEmail = value => /.+@.+\..+/.test(value.trim());
+
+    const handleSubmit = async event => {
+      event.preventDefault();
+      if (!(emailInput instanceof HTMLInputElement)) return;
+
+      const email = emailInput.value.trim();
+      setError("");
+      setMessage("");
+
+      if (!isValidEmail(email)) {
+        setError("Please enter a valid email address.");
+        return;
+      }
+
+      setSubmitting(true);
+      try {
+        const response = await fetch("/api/newsletter", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+
+        const payload = await response.json().catch(() => null);
+
+        if (response.ok && payload) {
+          if (payload.status === "already_subscribed") {
+            setMessage("You are already subscribed. Thanks for staying with us.");
+          } else {
+            setMessage("Subscribed successfully. Please check your inbox.");
+          }
+          emailInput.value = "";
+          return;
+        }
+
+        if (response.status === 400) {
+          setError((payload && payload.message) || "Please enter a valid email address.");
+          return;
+        }
+
+        if (response.status === 503) {
+          setMessage("Subscription service is temporarily unavailable. Please retry shortly.");
+          return;
+        }
+
+        setMessage("Unable to subscribe right now. Please retry.");
+      } catch {
+        setMessage("Unable to subscribe right now. Please retry.");
+      } finally {
+        setSubmitting(false);
+      }
+    };
+
+    if (form instanceof HTMLFormElement) {
+      form.addEventListener("submit", handleSubmit);
+    }
+  </script>
+</section>

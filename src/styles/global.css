@@ -1,0 +1,136 @@
+@import "tailwindcss";
+@import "./typography.css";
+
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+:root,
+html[data-theme="light"] {
+  --background: #f6f2ea;
+  --foreground: #1f1c17;
+  --accent: #b3471b;
+  --muted: #efe6d8;
+  --border: #d9ccb7;
+  --surface: #fbf7ef;
+  --surface-strong: #f1e5d4;
+  --shadow-soft: 0 16px 48px -28px rgb(71 45 20 / 38%);
+  --font-body-stack: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif;
+  --font-ui-stack: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+  --font-display-stack: "Bodoni Moda", "Didot", "Times New Roman", serif;
+}
+
+html[data-theme="dark"] {
+  --background: #181616;
+  --foreground: #f2ece4;
+  --accent: #f2965c;
+  --muted: #2f2a26;
+  --border: #5b4f43;
+  --surface: #23201d;
+  --surface-strong: #2d2924;
+  --shadow-soft: 0 16px 48px -30px rgb(0 0 0 / 60%);
+}
+
+@theme inline {
+  --font-app: var(--font-body-stack);
+  --font-ui: var(--font-ui-stack);
+  --font-display: var(--font-display-stack);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-accent: var(--accent);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-accent/75;
+    scrollbar-width: auto;
+    scrollbar-color: var(--color-muted) transparent;
+  }
+  html {
+    @apply overflow-y-scroll scroll-smooth;
+  }
+  body {
+    @apply relative flex min-h-svh flex-col bg-background font-app text-foreground selection:bg-accent/75 selection:text-background;
+    background-image:
+      radial-gradient(ellipse at top right, color-mix(in oklab, var(--color-accent) 14%, transparent), transparent 55%),
+      radial-gradient(ellipse at 15% 40%, color-mix(in oklab, var(--color-muted) 55%, transparent), transparent 62%);
+  }
+  a,
+  button {
+    @apply outline-offset-1 outline-accent focus-visible:no-underline focus-visible:outline-2 focus-visible:outline-dashed;
+  }
+  p,
+  li,
+  figcaption,
+  label,
+  input,
+  textarea {
+    font-family: var(--font-body);
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    letter-spacing: 0.02em;
+  }
+  nav,
+  button,
+  .ui-label {
+    font-family: var(--font-ui);
+    letter-spacing: 0.03em;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@utility max-w-app {
+  @apply max-w-5xl;
+}
+
+@utility app-layout {
+  @apply mx-auto w-full max-w-app px-4 sm:px-6;
+}
+
+.active-nav {
+  @apply rounded-full bg-surface-strong px-4 py-2 text-accent no-underline;
+}
+
+main section {
+  animation: rise-in 420ms ease-out both;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pagefind-ui__search-input,
+.pagefind-ui__drawer,
+.pagefind-ui__result {
+  border-color: var(--color-border) !important;
+  background: var(--color-surface) !important;
+  color: var(--color-foreground) !important;
+}
+
+.pagefind-ui__result-link {
+  color: var(--color-accent) !important;
+}
+
+/* Source: https://piccalil.li/blog/a-more-modern-css-reset/ */
+/* Anything that has been anchored to should have extra scroll margin */
+:target {
+  scroll-margin-block: 1rem;
+}

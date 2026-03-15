@@ -1,0 +1,21 @@
+name: resume
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Trigger source action
+        required: false
+        default: resume
+      requestedAt:
+        description: Request timestamp
+        required: false
+
+jobs:
+  resume:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Resume requested"
+          echo "Action: ${{ github.event.inputs.action || 'resume' }}"
+          echo "Requested at: ${{ github.event.inputs.requestedAt || 'unknown' }}"

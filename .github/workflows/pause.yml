@@ -1,0 +1,21 @@
+name: pause
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Trigger source action
+        required: false
+        default: pause
+      requestedAt:
+        description: Request timestamp
+        required: false
+
+jobs:
+  pause:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Emergency pause requested"
+          echo "Action: ${{ github.event.inputs.action || 'pause' }}"
+          echo "Requested at: ${{ github.event.inputs.requestedAt || 'unknown' }}"

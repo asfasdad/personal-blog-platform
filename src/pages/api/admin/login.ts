@@ -1,0 +1,56 @@
+import type { APIRoute } from "astro";
+
+export const prerender = false;
+
+const getAdminKey = (env: Record<string, string | undefined>) =>
+  env.ADMIN_ACCESS_KEY ?? "local-admin-key";
+
+const getRuntimeEnv = (locals: unknown): Record<string, string | undefined> => {
+  if (!locals || typeof locals !== "object") {
+    return {};
+  }
+
+  const runtime = Reflect.get(locals, "runtime");
+  if (!runtime || typeof runtime !== "object") {
+    return {};
+  }
+
+  const env = Reflect.get(runtime, "env");
+  if (!env || typeof env !== "object") {
+    return {};
+  }
+
+  return env as Record<string, string | undefined>;
+};
+
+export const POST: APIRoute = async ({ request, locals, cookies, redirect }) => {
+  const env = getRuntimeEnv(locals);
+  const configuredKey = getAdminKey(env);
+
+  let key = "";
+  const contentType = request.headers.get("content-type") ?? "";
+  if (contentType.includes("application/json")) {
+    const body = (await request.json().catch(() => ({}))) as { key?: string };
+    key = String(body.key ?? "");
+  } else if (
+    contentType.includes("application/x-www-form-urlencoded") ||
+    contentType.includes("multipart/form-data")
+  ) {
+    const formData = await request.formData();
+    key = String(formData.get("key") ?? "");
+  }
+
+  if (key !== configuredKey) {
+    return redirect("/admin/login?error=invalid");
+  }
+
+  cookies.set("admin_access", configuredKey, {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: new URL(request.url).protocol === "https:",
+    maxAge: 60 * 60 * 8,
+  });
+
+  return redirect("/admin");
+};

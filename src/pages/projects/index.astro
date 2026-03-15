@@ -1,0 +1,58 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import Datetime from "@/components/Datetime.astro";
+import { SITE } from "@/config";
+
+const projects = await getCollection("projects");
+const visibleProjects = projects
+  .filter(project => !project.data.draft)
+  .sort(
+    (a, b) =>
+      new Date(b.data.pubDatetime).getTime() -
+      new Date(a.data.pubDatetime).getTime()
+  );
+---
+
+<Layout title={`Projects | ${SITE.title}`}>
+  <Header />
+  <main id="main-content" class="app-layout">
+    <h1 class="text-2xl font-semibold sm:text-3xl">Projects</h1>
+    {
+      visibleProjects.length === 0 ? (
+        <p class="mt-6">Projects will appear here once published.</p>
+      ) : (
+        <ul class="mt-6 space-y-6">
+          {visibleProjects.map(project => (
+            <li class="rounded-lg border border-border p-4">
+              <h2 class="text-xl font-semibold">{project.data.title}</h2>
+              <Datetime pubDatetime={project.data.pubDatetime} size="sm" />
+              <p class="mt-2">{project.data.description}</p>
+              <div class="mt-3 flex gap-3">
+                {project.data.website && (
+                  <a
+                    href={project.data.website}
+                    class="text-accent underline-offset-4 hover:underline"
+                  >
+                    Visit
+                  </a>
+                )}
+                {project.data.repo && (
+                  <a
+                    href={project.data.repo}
+                    class="text-accent underline-offset-4 hover:underline"
+                  >
+                    Repository
+                  </a>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </main>
+  <Footer />
+</Layout>

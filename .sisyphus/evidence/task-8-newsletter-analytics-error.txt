@@ -1,0 +1,14 @@
+Task 8 negative-path verification
+Date: 2026-03-15
+
+Scenario:
+- Newsletter provider API returns `503` on submission.
+
+Observed behavior:
+- Form submission does not crash the page.
+- User receives non-destructive retry guidance message.
+- Input/form remain interactive for retry.
+
+Automated proof:
+- Covered by `tests/e2e/newsletter.spec.ts` case
+  `newsletter shows graceful outage message when provider is unavailable`.

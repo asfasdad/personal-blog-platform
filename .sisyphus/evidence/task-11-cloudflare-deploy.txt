@@ -1,0 +1,29 @@
+{
+  "generatedAt": "2026-03-15T11:28:12.647Z",
+  "baseUrl": "http://127.0.0.1:4418",
+  "checks": [
+    {
+      "route": "/",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "route": "/blog/hello-world/",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "route": "/search/",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "route": "/admin",
+      "status": 302,
+      "ok": true,
+      "location": "/admin/login",
+      "protectedByStatus": true,
+      "hasLoginRedirect": true
+    }
+  ]
+}

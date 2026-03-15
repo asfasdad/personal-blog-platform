@@ -1,0 +1,12 @@
+Task 9 negative-path verification
+Date: 2026-03-15
+
+Scenario:
+- Access `/admin` without auth cookie or admin key header.
+
+Observed behavior:
+- Request is denied and redirected to `/admin/login`.
+- Admin data is not rendered for unauthenticated visitor.
+
+Automated proof:
+- `tests/e2e/admin.spec.ts` case: `unauthenticated user is redirected to admin login`.

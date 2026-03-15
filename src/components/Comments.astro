@@ -1,0 +1,113 @@
+---
+const giscus = {
+  repo: import.meta.env.PUBLIC_GISCUS_REPO ?? "giscus/giscus",
+  repoId: import.meta.env.PUBLIC_GISCUS_REPO_ID ?? "",
+  category: import.meta.env.PUBLIC_GISCUS_CATEGORY ?? "Announcements",
+  categoryId: import.meta.env.PUBLIC_GISCUS_CATEGORY_ID ?? "",
+  mapping: import.meta.env.PUBLIC_GISCUS_MAPPING ?? "pathname",
+  reactionsEnabled: import.meta.env.PUBLIC_GISCUS_REACTIONS_ENABLED ?? "1",
+  emitMetadata: import.meta.env.PUBLIC_GISCUS_EMIT_METADATA ?? "0",
+  inputPosition: import.meta.env.PUBLIC_GISCUS_INPUT_POSITION ?? "top",
+  theme: import.meta.env.PUBLIC_GISCUS_THEME ?? "light",
+  lang: import.meta.env.PUBLIC_GISCUS_LANG ?? "en",
+};
+---
+
+<section
+  id="comments"
+  data-state="idle"
+  class="rounded-xl border border-border bg-surface p-5"
+  data-pagefind-ignore
+  data-giscus-repo={giscus.repo}
+  data-giscus-repo-id={giscus.repoId}
+  data-giscus-category={giscus.category}
+  data-giscus-category-id={giscus.categoryId}
+  data-giscus-mapping={giscus.mapping}
+  data-giscus-reactions-enabled={giscus.reactionsEnabled}
+  data-giscus-emit-metadata={giscus.emitMetadata}
+  data-giscus-input-position={giscus.inputPosition}
+  data-giscus-theme={giscus.theme}
+  data-giscus-lang={giscus.lang}
+>
+  <h2 class="text-xl font-semibold">Comments</h2>
+  <p id="comments-status" class="mt-2 text-sm text-foreground/80">Preparing comment thread...</p>
+  <p id="comments-fallback" class="mt-2 hidden text-sm text-foreground/80">
+    Comments could not be loaded right now. Please refresh or try again later.
+  </p>
+  <div id="giscus-container" class="mt-4"></div>
+
+  <script is:inline>
+    const commentRoot = document.querySelector("#comments");
+    const statusNode = document.querySelector("#comments-status");
+    const fallbackNode = document.querySelector("#comments-fallback");
+    const articleNode = document.querySelector("#article");
+
+    const setState = (state, message) => {
+      if (commentRoot) {
+        commentRoot.setAttribute("data-state", state);
+      }
+      if (statusNode) {
+        statusNode.textContent = message;
+      }
+    };
+
+    const showFallback = message => {
+      setState("error", message);
+      if (fallbackNode) {
+        fallbackNode.classList.remove("hidden");
+      }
+    };
+
+    const bootComments = () => {
+      if (!(articleNode instanceof HTMLElement) || articleNode.textContent?.trim().length === 0) {
+        setState("waiting", "Waiting for article content before loading comments...");
+        window.setTimeout(bootComments, 120);
+        return;
+      }
+
+      const container = document.querySelector("#giscus-container");
+      if (!(container instanceof HTMLElement)) {
+        showFallback("Comment container is unavailable.");
+        return;
+      }
+
+      setState("loading", "Loading comment thread...");
+      const script = document.createElement("script");
+      script.src = "https://giscus.app/client.js";
+      script.async = true;
+      script.crossOrigin = "anonymous";
+
+      script.setAttribute("data-repo", commentRoot?.getAttribute("data-giscus-repo") ?? "giscus/giscus");
+      script.setAttribute("data-repo-id", commentRoot?.getAttribute("data-giscus-repo-id") ?? "");
+      script.setAttribute("data-category", commentRoot?.getAttribute("data-giscus-category") ?? "Announcements");
+      script.setAttribute("data-category-id", commentRoot?.getAttribute("data-giscus-category-id") ?? "");
+      script.setAttribute("data-mapping", commentRoot?.getAttribute("data-giscus-mapping") ?? "pathname");
+      script.setAttribute("data-strict", "0");
+      script.setAttribute("data-reactions-enabled", commentRoot?.getAttribute("data-giscus-reactions-enabled") ?? "1");
+      script.setAttribute("data-emit-metadata", commentRoot?.getAttribute("data-giscus-emit-metadata") ?? "0");
+      script.setAttribute("data-input-position", commentRoot?.getAttribute("data-giscus-input-position") ?? "top");
+      script.setAttribute("data-theme", commentRoot?.getAttribute("data-giscus-theme") ?? "light");
+      script.setAttribute("data-lang", commentRoot?.getAttribute("data-giscus-lang") ?? "en");
+      script.setAttribute("data-loading", "lazy");
+
+      script.addEventListener("load", () => {
+        setState("loaded", "Comments are ready.");
+      });
+
+      script.addEventListener("error", () => {
+        showFallback("Comments script failed to load.");
+      });
+
+      container.appendChild(script);
+
+      window.setTimeout(() => {
+        const hasFrame = container.querySelector("iframe");
+        if (!hasFrame && commentRoot?.getAttribute("data-state") !== "error") {
+          showFallback("Comment provider did not respond in time.");
+        }
+      }, 5000);
+    };
+
+    window.requestAnimationFrame(bootComments);
+  </script>
+</section>

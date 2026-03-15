@@ -1,0 +1,20 @@
+Task 8 verification snapshot
+Date: 2026-03-15
+
+Implemented scope:
+- Newsletter UI with validation and resilient states in `src/components/NewsletterSignup.astro`.
+- Newsletter API proxy in `src/pages/api/newsletter.ts` with email validation, provider handling, idempotent duplicate response mapping, and outage fallback.
+- Cloudflare Web Analytics beacon injection on public routes in `src/layouts/Layout.astro`.
+- Newsletter section integrated on home page in `src/pages/index.astro`.
+
+Verification commands:
+- pnpm test:e2e -> PASS (15 tests total; includes newsletter + analytics checks)
+- pnpm test:unit -> PASS
+- pnpm verify:content -> PASS
+- pnpm build -> PASS
+
+E2E proof points:
+- Invalid email shows field-level error.
+- Successful subscription and duplicate subscription both produce user-safe responses.
+- Provider outage (503 mock) produces graceful retry message.
+- Analytics beacon script exists on public page.

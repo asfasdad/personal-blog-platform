@@ -1,0 +1,105 @@
+name: cloudflare-deploy
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Deploy target
+        required: true
+        default: preview
+        type: choice
+        options:
+          - preview
+          - production
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+      PRODUCTION_BRANCH: ${{ vars.CLOUDFLARE_PRODUCTION_BRANCH || 'main' }}
+    outputs:
+      deploy_url: ${{ steps.meta.outputs.deploy_url }}
+      deploy_target: ${{ steps.meta.outputs.deploy_target }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Resolve deployment target
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -z "${PAGES_PROJECT:-}" ]; then
+            echo "Missing repository variable CLOUDFLARE_PAGES_PROJECT" >&2
+            exit 1
+          fi
+
+          TARGET="preview"
+          BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+
+          if [ "${GITHUB_EVENT_NAME}" = "push" ] && [ "${GITHUB_REF_NAME}" = "${PRODUCTION_BRANCH}" ]; then
+            TARGET="production"
+            BRANCH_NAME="${PRODUCTION_BRANCH}"
+          fi
+
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            TARGET="${{ github.event.inputs.target }}"
+            if [ "${TARGET}" = "production" ]; then
+              BRANCH_NAME="${PRODUCTION_BRANCH}"
+            fi
+          fi
+
+          DEPLOY_URL="https://${PAGES_PROJECT}.pages.dev"
+          if [ "${TARGET}" = "preview" ]; then
+            SAFE_BRANCH=$(echo "${BRANCH_NAME}" | tr '/_' '-')
+            DEPLOY_URL="https://${SAFE_BRANCH}.${PAGES_PROJECT}.pages.dev"
+          fi
+
+          echo "deploy_target=${TARGET}" >> "$GITHUB_OUTPUT"
+          echo "deploy_branch=${BRANCH_NAME}" >> "$GITHUB_OUTPUT"
+          echo "deploy_url=${DEPLOY_URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            pages deploy ./dist
+            --project-name=${{ env.PAGES_PROJECT }}
+            --branch=${{ steps.meta.outputs.deploy_branch }}
+
+      - name: Wait for deployment propagation
+        shell: bash
+        run: sleep 10
+
+      - name: Run post-deploy smoke checks
+        env:
+          DEPLOY_URL: ${{ steps.meta.outputs.deploy_url }}
+        run: >-
+          node ./scripts/smoke/check-routes.mjs
+          --base-url "$DEPLOY_URL"
+          --report-path ".sisyphus/evidence/task-11-cloudflare-deploy-${{ steps.meta.outputs.deploy_target }}.json"
+
+      - name: Upload task 11 smoke evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: task-11-cloudflare-deploy-${{ steps.meta.outputs.deploy_target }}
+          path: .sisyphus/evidence/task-11-cloudflare-deploy-${{ steps.meta.outputs.deploy_target }}.json

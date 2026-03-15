@@ -1,0 +1,12 @@
+{
+  "status": "quarantined",
+  "prompt": "tests/fixtures/prompts/malformed-post.json",
+  "errors": [
+    "title is required",
+    "summary is required",
+    "tags must be an array of strings",
+    "publishAt must be a valid ISO date"
+  ],
+  "timestamp": "2026-03-25T00:00:00.000Z",
+  "prAction": "blocked-no-pr"
+}

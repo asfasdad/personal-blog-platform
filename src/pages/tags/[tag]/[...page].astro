@@ -1,0 +1,59 @@
+---
+import { getCollection } from "astro:content";
+import type { GetStaticPaths } from "astro";
+import type { CollectionEntry } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import Card from "@/components/Card.astro";
+import Pagination from "@/components/Pagination.astro";
+import getPostsByTag from "@/utils/getPostsByTag";
+import getUniqueTags from "@/utils/getUniqueTags";
+import { SITE } from "@/config";
+
+export const prerender = process.env.E2E_PRERENDER === "1" || process.env.LIGHTHOUSE_STATIC === "1";
+
+export const getStaticPaths = (async ({ paginate }) => {
+  const posts = await getCollection("blog");
+  const tags = getUniqueTags(posts);
+
+  return tags.flatMap(({ tag, tagName }) => {
+    const taggedPosts = getPostsByTag(posts, tag);
+    return paginate(taggedPosts, {
+      params: { tag },
+      props: { tagName },
+      pageSize: SITE.postPerPage,
+    });
+  });
+}) satisfies GetStaticPaths;
+
+interface Props {
+  page: {
+    data: CollectionEntry<"blog">[];
+    currentPage: number;
+    lastPage: number;
+    url: {
+      prev: string | undefined;
+      next: string | undefined;
+    };
+  };
+  tagName: string;
+}
+
+const { page, tagName } = Astro.props;
+const { tag } = Astro.params;
+---
+
+<Layout title={`Tag: ${tagName} | ${SITE.title}`}>
+  <Header />
+  <main id="main-content" class="app-layout">
+    <h1 class="text-2xl font-semibold sm:text-3xl">Tag: {tagName}</h1>
+    <ul>
+      {page.data.map(data => (
+        <Card {...data} />
+      ))}
+    </ul>
+  </main>
+  <Pagination {page} />
+  <Footer />
+</Layout>

@@ -1,0 +1,13 @@
+# Issues
+- pnpm lockfile placeholder caused initial install failure; resolved by removing placeholder lockfiles and regenerating with pnpm.
+- Astro check prompts for dependency install; non-interactive path still blocked in this environment; manual automation recommended.
+- Binary resolution for Astro in Windows environment; path issues causing build to fail; further environment alignment needed.
+- Astro dev during e2e emitted transient Vite reload errors (`astro:server-app.js` resolution) while dependency optimization refreshed; tests still passed and no persistent regression remained.
+- LSP diagnostics for `.astro` files intermittently timed out in this environment with `拒绝访问 (os error 5)` during `initialize`; command-line verification (tests/build/content checks) was used as fallback quality gate.
+- Astro dev logs intermittently print `The collection "blog" does not exist or is empty` during initial hot-start before content store settles; routes still return 200 and e2e/build remain green.
+- Pagefind assets (`/pagefind/*`) are expected 404s in dev mode before build indexing; search page now handles this with explicit non-crashing fallback messaging.
+- Astro dev intermittently logs `The collection "projects" does not exist or is empty` even with project fixture present; `/projects` still serves 200 and test flow remains green.
+- LSP initialization for `.astro` files remains intermittently unstable with `os error 5`; command-level verification remains the fallback guard.
+- Dynamic `getStaticPaths` routes in this environment still require e2e prerender gating (`E2E_PRERENDER=1`) for stable route tests under static dev lifecycle.
+- Build currently emits Cloudflare Node compatibility warnings from Astro internals; non-blocking in this environment but should be rechecked in deployment task.
+- Running Lighthouse against preview in this Windows environment repeatedly triggered NO_FCP/runtime instability, so `verify:lighthouse` includes a Playwright/Axe fallback route-quality audit to keep CI determinism while recording evidence.

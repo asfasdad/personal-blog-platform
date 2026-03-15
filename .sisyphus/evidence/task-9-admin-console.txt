@@ -1,0 +1,20 @@
+Task 9 verification snapshot
+Date: 2026-03-15
+
+Implemented scope:
+- Owner gate via middleware for `/admin*` and `/api/admin*` using cookie/header key checks.
+- Admin login/logout endpoints and login page.
+- Owner-only admin dashboard with status cards, workflow action controls (publish/rollback/pause/resume), and audit feed.
+- Admin action API dispatch compatible with GitHub workflow dispatch (falls back to mock mode when secrets are absent).
+- Admin routes rendered with `noindex` and analytics excluded from admin surface.
+
+Verification commands:
+- pnpm test:e2e -> PASS (17 tests)
+- pnpm test:unit -> PASS
+- pnpm verify:content -> PASS
+- pnpm build -> PASS
+
+E2E proof points:
+- Unauthenticated `/admin` access redirects to `/admin/login`.
+- Owner login works with configured key and can trigger action endpoint successfully.
+- Admin page confirms analytics beacon script is absent.

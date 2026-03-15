@@ -1,0 +1,36 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import { SITE } from "@/config";
+
+export const prerender = false;
+---
+
+<Layout title={`Admin Login | ${SITE.title}`} noIndex={true}>
+  <Header />
+  <main id="main-content" class="app-layout mt-8">
+    <section class="mx-auto max-w-lg rounded-2xl border border-border bg-surface p-6 shadow-[var(--shadow-soft)]">
+      <h1 class="text-2xl font-semibold">Admin Access</h1>
+      <p class="mt-2 text-foreground/80">Enter the owner access key to open the operations console.</p>
+
+      <form method="post" action="/api/admin/login" class="mt-5 space-y-3">
+        <label class="ui-label block text-sm" for="admin-key">Access key</label>
+        <input
+          id="admin-key"
+          name="key"
+          type="password"
+          required
+          class="w-full rounded-lg border border-border bg-background px-3 py-2"
+        />
+        <button
+          type="submit"
+          class="ui-label rounded-lg border border-border bg-surface-strong px-4 py-2 hover:bg-muted"
+        >
+          Open Admin Console
+        </button>
+      </form>
+    </section>
+  </main>
+  <Footer />
+</Layout>

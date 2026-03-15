@@ -1,0 +1,17 @@
+Task 7 verification snapshot
+Date: 2026-03-15
+
+Implemented article experience scope:
+- Added in-article Table of Contents generation and heading anchor links in `src/layouts/PostDetails.astro`.
+- Kept reading progress indicator and validated it updates on scroll.
+- Added related-post links section based on shared tags.
+- Added comment integration component with delayed script load and lifecycle states in `src/components/Comments.astro`.
+
+Verification commands:
+- pnpm test:e2e -> PASS (11 tests; includes article and comment fallback scenarios)
+- pnpm test:unit -> PASS
+- pnpm verify:content -> PASS
+- pnpm build -> PASS
+
+Relevant E2E coverage:
+- `tests/e2e/article.spec.ts` validates title/meta route render, TOC links, code block presence, progress bar change, related posts visibility, and comments section state transition.

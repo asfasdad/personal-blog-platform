@@ -1,0 +1,21 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import LinkButton from "@/components/LinkButton.astro";
+import { SITE } from "@/config";
+---
+
+<Layout title={`404 Not Found | ${SITE.title}`}>
+  <Header />
+  <main id="main-content" class="app-layout">
+    <div class="flex flex-col items-center justify-center py-20">
+      <h1 class="text-6xl font-bold text-accent mb-4">404</h1>
+      <p class="text-xl mb-8">Page not found</p>
+      <LinkButton href="/" class="text-accent underline">
+        Go back home
+      </LinkButton>
+    </div>
+  </main>
+  <Footer />
+</Layout>

@@ -1,0 +1,18 @@
+Task 5 verification snapshot
+Date: 2026-03-15
+
+Design-system implementation scope:
+- Centralized visual tokens (color, surface, border, shadow, typography stacks) in `src/styles/global.css`
+- Updated shared shell (`Header.astro`, `Footer.astro`) with premium card surfaces and stronger focus affordances
+- Updated homepage section shells to match shared visual system
+
+Verification commands and results:
+- pnpm test:unit -> PASS
+- pnpm test:e2e -> PASS (6 tests)
+- pnpm build -> PASS
+
+Responsive and keyboard evidence:
+- .sisyphus/evidence/task-5-design-system-375.png
+- .sisyphus/evidence/task-5-design-system-768.png
+- .sisyphus/evidence/task-5-design-system-1440.png
+- .sisyphus/evidence/task-5-design-system-focus.png

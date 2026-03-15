@@ -1,0 +1,21 @@
+Task 10 fixture checks
+
+valid exit code: 0
+
+valid stdout: {
+  "status": "preview-ready",
+  "prompt": "tests/fixtures/prompts/hello-premium-world.json",
+  "draftPath": "src\\content\\blog\\hello-premium-world.md",
+  "slug": "hello-premium-world",
+  "title": "Hello Premium World",
+  "schedule": {
+    "publishAt": "2026-03-20T09:00:00.000Z",
+    "now": "2026-03-25T00:00:00.000Z",
+    "previewReady": true,
+    "reason": "eligible-now"
+  },
+  "prAction": "mock-pr-upsert",
+  "timestamp": "2026-03-25T00:00:00.000Z"
+}
+
+valid stderr: 

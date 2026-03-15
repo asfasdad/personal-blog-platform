@@ -1,0 +1,13 @@
+Task 6 negative-path verification
+Date: 2026-03-15
+
+Scenario:
+- Query search with a guaranteed no-match term (`zzzz-no-match`).
+
+Observed behavior:
+- In dev mode (without generated Pagefind assets), search falls back to a non-crashing status message.
+- In index-ready mode, no-match query shows explicit empty-state message:
+  `No results found. Try a broader term or a tag keyword.`
+
+Conclusion:
+- Search failure/empty scenarios are handled gracefully with no page crash.

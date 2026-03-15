@@ -1,0 +1,95 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import { SITE } from "@/config";
+
+---
+
+<Layout title={`Search | ${SITE.title}`}>
+  <link rel="stylesheet" href="/pagefind/pagefind-ui.css" />
+  <Header />
+  <main id="main-content" class="app-layout">
+    <h1 class="text-2xl font-semibold sm:text-3xl">Search</h1>
+    <p class="mt-4 mb-8 max-w-2xl">
+      Search posts by title, summary, and tags. Results are generated from the
+      static build index.
+    </p>
+    <p id="search-status" class="rounded-lg border border-border bg-surface px-4 py-3">
+      Loading search index...
+    </p>
+    <div id="search" class="mt-8"></div>
+    <p id="search-empty" class="mt-6 hidden rounded-lg border border-border bg-surface px-4 py-3">
+      No results found. Try a broader term or a tag keyword.
+    </p>
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+  const status = document.querySelector("#search-status");
+  const emptyState = document.querySelector("#search-empty");
+
+  const setStatus = (message: string) => {
+    if (!status) return;
+    status.textContent = message;
+  };
+
+  const updateEmptyState = () => {
+    const hasQuery =
+      (document.querySelector(".pagefind-ui__search-input") as HTMLInputElement | null)
+        ?.value
+        .trim().length;
+    const resultCount = document.querySelectorAll(".pagefind-ui__result").length;
+
+    if (!emptyState) return;
+    if (hasQuery && resultCount === 0) {
+      emptyState.classList.remove("hidden");
+    } else {
+      emptyState.classList.add("hidden");
+    }
+  };
+
+  const bootSearch = async () => {
+    try {
+      const script = document.createElement("script");
+      script.src = "/pagefind/pagefind-ui.js";
+      script.defer = true;
+
+      await new Promise<void>((resolve, reject) => {
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error("pagefind-ui load failed"));
+        document.head.appendChild(script);
+      });
+
+      type PagefindUIConstructor = new (options: {
+        element: string;
+        showSubResults: boolean;
+        resetStyles: boolean;
+      }) => unknown;
+
+      const PagefindUI = (window as Window & { PagefindUI?: PagefindUIConstructor })
+        .PagefindUI;
+      if (!PagefindUI) {
+        throw new Error("PagefindUI not found on window");
+      }
+
+      new PagefindUI({
+        element: "#search",
+        showSubResults: true,
+        resetStyles: false,
+      });
+
+      setStatus("Search ready.");
+      window.setTimeout(updateEmptyState, 200);
+      document.addEventListener("input", updateEmptyState);
+      document.addEventListener("click", () => window.setTimeout(updateEmptyState, 100));
+    } catch {
+      setStatus("Search index is unavailable in this environment. Run a production build to enable Pagefind.");
+    }
+  };
+
+  if (typeof window !== "undefined") {
+    bootSearch();
+  }
+</script>
