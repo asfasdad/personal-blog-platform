@@ -23,7 +23,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+      PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT || 'personal-blog-platform' }}
       PRODUCTION_BRANCH: ${{ vars.CLOUDFLARE_PRODUCTION_BRANCH || 'main' }}
     outputs:
       deploy_url: ${{ steps.meta.outputs.deploy_url }}
@@ -56,11 +56,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
-          if [ -z "${PAGES_PROJECT:-}" ]; then
-            echo "Missing repository variable CLOUDFLARE_PAGES_PROJECT" >&2
-            exit 1
-          fi
 
           TARGET="preview"
           BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
