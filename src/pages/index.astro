@@ -1,23 +1,16 @@
 ---
-import { getCollection } from "astro:content";
 import Layout from "@/layouts/Layout.astro";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
 import Socials from "@/components/Socials.astro";
 import LinkButton from "@/components/LinkButton.astro";
-import Card from "@/components/Card.astro";
 import NewsletterSignup from "@/components/NewsletterSignup.astro";
-import getSortedPosts from "@/utils/getSortedPosts";
 import IconRss from "@/assets/icons/IconRss.svg";
 import IconArrowRight from "@/assets/icons/IconArrowRight.svg";
 import { SITE } from "@/config";
 import { SOCIALS } from "@/constants";
 
-const posts = await getCollection("blog");
-
-const sortedPosts = getSortedPosts(posts);
-const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
-const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
+export const prerender = true;
 ---
 
 <Layout>
@@ -62,40 +55,20 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
       }
     </section>
 
-    {
-      featuredPosts.length > 0 && (
-        <section
-          id="featured"
-          class:list={[
-            "mt-8 rounded-2xl border border-border bg-surface px-6 py-8 shadow-[var(--shadow-soft)]",
-          ]}
-        >
-          <h2 class="text-2xl font-semibold tracking-wide">Featured</h2>
-          <ul>
-            {featuredPosts.map(data => (
-              <Card variant="h3" {...data} />
-            ))}
-          </ul>
-        </section>
-      )
-    }
-
-    {
-      recentPosts.length > 0 && (
-        <section
-          id="recent-posts"
-          class="mt-8 rounded-2xl border border-border bg-surface px-6 py-8 shadow-[var(--shadow-soft)]"
-        >
-          <h2 class="text-2xl font-semibold tracking-wide">Recent Posts</h2>
-          <ul>
-            {recentPosts.map(
-              (data, index) =>
-                index < SITE.postPerIndex && <Card variant="h3" {...data} />
-            )}
-          </ul>
-        </section>
-      )
-    }
+    <section
+      id="featured"
+      class:list={[
+        "mt-8 rounded-2xl border border-border bg-surface px-6 py-8 shadow-[var(--shadow-soft)]",
+      ]}
+    >
+      <h2 class="text-2xl font-semibold tracking-wide">Featured</h2>
+      <p class="mt-3 opacity-85">
+        Read the launch post for this production setup.
+      </p>
+      <a href="/blog/hello-world/" class="mt-4 inline-block text-accent underline">
+        Hello World
+      </a>
+    </section>
 
     <div class="my-8 text-center">
       <LinkButton href="/blog/">

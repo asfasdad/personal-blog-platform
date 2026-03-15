@@ -1,6 +1,6 @@
 ---
 import { getCollection } from "astro:content";
-import type { GetStaticPaths } from "astro";
+import type { GetStaticPaths, Page } from "astro";
 import type { CollectionEntry } from "astro:content";
 import Layout from "@/layouts/Layout.astro";
 import Header from "@/components/Header.astro";
@@ -28,15 +28,7 @@ export const getStaticPaths = (async ({ paginate }) => {
 }) satisfies GetStaticPaths;
 
 interface Props {
-  page: {
-    data: CollectionEntry<"blog">[];
-    currentPage: number;
-    lastPage: number;
-    url: {
-      prev: string | undefined;
-      next: string | undefined;
-    };
-  };
+  page: Page<CollectionEntry<"blog">>;
   tagName: string;
 }
 
