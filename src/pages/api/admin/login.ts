@@ -2,30 +2,10 @@ import type { APIRoute } from "astro";
 
 export const prerender = false;
 
-const getAdminKey = (env: Record<string, string | undefined>) =>
-  env.ADMIN_ACCESS_KEY ?? "local-admin-key";
+const getAdminKey = () => process.env.ADMIN_ACCESS_KEY ?? "local-admin-key";
 
-const getRuntimeEnv = (locals: unknown): Record<string, string | undefined> => {
-  if (!locals || typeof locals !== "object") {
-    return {};
-  }
-
-  const runtime = Reflect.get(locals, "runtime");
-  if (!runtime || typeof runtime !== "object") {
-    return {};
-  }
-
-  const env = Reflect.get(runtime, "env");
-  if (!env || typeof env !== "object") {
-    return {};
-  }
-
-  return env as Record<string, string | undefined>;
-};
-
-export const POST: APIRoute = async ({ request, locals, cookies, redirect }) => {
-  const env = getRuntimeEnv(locals);
-  const configuredKey = getAdminKey(env);
+export const POST: APIRoute = async ({ request, cookies, redirect }) => {
+  const configuredKey = getAdminKey();
 
   let key = "";
   const contentType = request.headers.get("content-type") ?? "";

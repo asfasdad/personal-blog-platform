@@ -10,27 +10,7 @@ const ACTION_TO_WORKFLOW_ENV: Record<string, string> = {
 };
 
 const now = () => new Date().toISOString();
-
-const getRuntimeEnv = (locals: unknown): Record<string, string | undefined> => {
-  if (!locals || typeof locals !== "object") {
-    return {};
-  }
-
-  const runtime = Reflect.get(locals, "runtime");
-  if (!runtime || typeof runtime !== "object") {
-    return {};
-  }
-
-  const env = Reflect.get(runtime, "env");
-  if (!env || typeof env !== "object") {
-    return {};
-  }
-
-  return env as Record<string, string | undefined>;
-};
-
-export const POST: APIRoute = async ({ request, locals }) => {
-  const env = getRuntimeEnv(locals);
+export const POST: APIRoute = async ({ request }) => {
   const body = (await request.json().catch(() => null)) as { action?: string } | null;
   const action = body?.action ?? "";
 
@@ -41,10 +21,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
     });
   }
 
-  const token = env.GITHUB_AUTOMATION_TOKEN;
-  const owner = env.GITHUB_REPO_OWNER;
-  const repo = env.GITHUB_REPO_NAME;
-  const workflow = env[ACTION_TO_WORKFLOW_ENV[action]];
+  const token = process.env.GITHUB_AUTOMATION_TOKEN;
+  const owner = process.env.GITHUB_REPO_OWNER;
+  const repo = process.env.GITHUB_REPO_NAME;
+  const workflow = process.env[ACTION_TO_WORKFLOW_ENV[action]];
 
   if (token && owner && repo && workflow) {
     const dispatchResponse = await fetch(
