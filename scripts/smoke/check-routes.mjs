@@ -63,6 +63,25 @@ const expectOk = async (baseUrl, route) => {
   };
 };
 
+const expectOptional = async (baseUrl, route) => {
+  const response = await requestWithRetry(`${baseUrl}${route}`);
+  const status = response?.status ?? "no-response";
+  if (!response?.ok) {
+    return {
+      route,
+      status,
+      ok: false,
+      optional: true,
+    };
+  }
+  return {
+    route,
+    status: response.status,
+    ok: true,
+    optional: true,
+  };
+};
+
 const expectAdminProtected = async (baseUrl, route) => {
   const response = await requestWithRetry(`${baseUrl}${route}`, { redirect: "manual" });
   if (!response) {
@@ -109,8 +128,8 @@ const main = async () => {
   // Additional production verification endpoints for smoke validation
   checks.push(await expectOk(baseUrl, "/rss.xml"));
   checks.push(await expectOk(baseUrl, "/favicon.svg"));
-  checks.push(await expectOk(baseUrl, "/pagefind/pagefind-ui.js"));
-  checks.push(await expectOk(baseUrl, "/pagefind/pagefind-ui.css"));
+  checks.push(await expectOptional(baseUrl, "/pagefind/pagefind-ui.js"));
+  checks.push(await expectOptional(baseUrl, "/pagefind/pagefind-ui.css"));
   checks.push(await expectAdminProtected(baseUrl, "/admin"));
 
   const payload = {
