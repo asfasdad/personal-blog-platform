@@ -23,7 +23,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      PAGES_PROJECT: personal-blog-platform
+      PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT || 'blog-cms' }}
       PRODUCTION_BRANCH: ${{ vars.CLOUDFLARE_PRODUCTION_BRANCH || 'main' }}
     outputs:
       deploy_url: ${{ steps.meta.outputs.deploy_url }}
@@ -83,14 +83,46 @@ jobs:
           echo "deploy_url=${DEPLOY_URL}" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: >-
-            pages deploy ./dist
-            --project-name=${{ env.PAGES_PROJECT }}
-            --branch=${{ steps.meta.outputs.deploy_branch }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          CANDIDATES=("${PAGES_PROJECT}" "personal-blog-platform" "blog-cms" "blog-158247-xyz")
+          UNIQUE_CANDIDATES=()
+          for name in "${CANDIDATES[@]}"; do
+            if [ -n "$name" ] && [[ ! " ${UNIQUE_CANDIDATES[*]} " =~ " ${name} " ]]; then
+              UNIQUE_CANDIDATES+=("$name")
+            fi
+          done
+
+          DEPLOYED=0
+          LAST_LOG=""
+          for PROJECT in "${UNIQUE_CANDIDATES[@]}"; do
+            echo "Trying Cloudflare Pages project: ${PROJECT}"
+            set +e
+            pnpm dlx wrangler pages deploy ./dist \
+              --project-name="${PROJECT}" \
+              --branch="${{ steps.meta.outputs.deploy_branch }}" 2>&1 | tee deploy.log
+            DEPLOY_EXIT=${PIPESTATUS[0]}
+            set -e
+
+            if [ "$DEPLOY_EXIT" -eq 0 ]; then
+              echo "PAGES_PROJECT=${PROJECT}" >> "$GITHUB_ENV"
+              DEPLOYED=1
+              break
+            fi
+
+            LAST_LOG=$(tail -n 120 deploy.log | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "Project ${PROJECT} failed, trying next candidate..."
+          done
+
+          if [ "$DEPLOYED" -ne 1 ]; then
+            echo "::error::Cloudflare deploy failed for all candidates. Last output:%0A${LAST_LOG}"
+            exit 1
+          fi
 
       - name: Wait for deployment propagation
         shell: bash
