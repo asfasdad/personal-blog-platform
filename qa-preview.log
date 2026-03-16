@@ -1,0 +1,36 @@
+
+> personal-blog-platform@ preview D:\work\网页部署
+> astro preview "--host" "127.0.0.1" "--port" "4322"
+
+Proxy environment variables detected. We'll use your proxy for fetch requests.
+[2m09:12:44[22m [34m[@astrojs/cloudflare][39m Enabling image processing with Cloudflare Images for production with the "IMAGES" Images binding.
+[2m09:12:44[22m [34m[@astrojs/cloudflare][39m Enabling sessions with Cloudflare KV with the "SESSION" KV binding.
+[2mDefault inspector port 9229 not available, using 9230 instead
+[22m
+[2m09:12:44[22m [34m[@astrojs/cloudflare][39m 
+[42m[1m astro [22m[49m [32mv13.1.1[39m [2mready in[22m 196 [2mms[22m
+
+[2m┃[22m Local    [36mhttp://127.0.0.1:4322/[39m
+
+HEAD / 200 OK (11ms)
+GET /search/ 200 OK (32ms)
+GET /_astro/Footer.NKt_gfI3.css 200 OK (4ms)
+GET /_astro/ClientRouter.astro_astro_type_script_index_0_lang.BkMtNSNS.js 200 OK (13ms)
+GET /pagefind/pagefind-ui.css 200 OK (13ms)
+GET /_astro/Layout.astro_astro_type_script_index_1_lang.DajR1m9s.js 200 OK (11ms)
+GET /pagefind/pagefind-ui.js 200 OK (2ms)
+GET /pagefind/pagefind.js 200 OK (12ms)
+GET /pagefind/pagefind-entry.json 200 OK (3ms)
+GET /pagefind/pagefind.en_7cf7cf7a35.pf_meta 200 OK (3ms)
+GET /pagefind/wasm.en.pagefind 200 OK (3ms)
+GET /pagefind/index/en_90264cc.pf_index 200 OK (3ms)
+GET /pagefind/fragment/en_ee846f0.pf_fragment 200 OK (3ms)
+GET /pagefind/fragment/en_3ff4206.pf_fragment 200 OK (3ms)
+GET /pagefind/fragment/en_9a93d18.pf_fragment 200 OK (4ms)
+GET /pagefind/fragment/en_c07a51e.pf_fragment 200 OK (7ms)
+GET /pagefind/fragment/en_7acc2a4.pf_fragment 200 OK (8ms)
+GET / 200 OK (4ms)
+GET /_astro/ClientRouter.astro_astro_type_script_index_0_lang.BkMtNSNS.js 200 OK (5ms)
+GET /_astro/Footer.NKt_gfI3.css 200 OK (4ms)
+GET /_astro/Layout.astro_astro_type_script_index_1_lang.DajR1m9s.js 200 OK (3ms)
+ ELIFECYCLE  Command failed with exit code 4294967295.

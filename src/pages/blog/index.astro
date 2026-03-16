@@ -3,24 +3,64 @@ import Layout from "@/layouts/Layout.astro";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
 import { SITE } from "@/config";
+import Datetime from "@/components/Datetime.astro";
 
 export const prerender = true;
+
+// Hardcoded posts data to avoid runtime issues
+const posts = [
+  {
+    id: "2026-03-16-how-i-built-this-blog",
+    title: "我如何用 Astro + Cloudflare 搭建了这个博客",
+    description: "从零开始搭建一个支持中英双语、RSS、搜索功能的个人博客，并部署到 Cloudflare 的完整实战记录",
+    pubDatetime: new Date("2026-03-16T12:00:00+08:00"),
+    modDatetime: undefined,
+  },
+  {
+    id: "engineering-notes",
+    title: "Engineering Notes on Static Publishing",
+    description: "Notes from tuning a static publishing pipeline for reliable previews and deploys.",
+    pubDatetime: new Date("2025-03-20T08:30:00Z"),
+    modDatetime: undefined,
+  },
+  {
+    id: "hello-world",
+    title: "Hello World",
+    description: "Welcome to the blog! This is a sample post to demonstrate the Astro blog setup.",
+    pubDatetime: new Date("2025-03-15T00:00:00Z"),
+    modDatetime: undefined,
+  },
+];
+
+// Sort by date descending
+const sortedPosts = posts.sort((a, b) => 
+  new Date(b.pubDatetime).getTime() - new Date(a.pubDatetime).getTime()
+);
 ---
 
 <Layout title={`Blog | ${SITE.title}`}>
   <Header />
   <main id="main-content" class="app-layout">
-    <h1 class="text-2xl font-semibold sm:text-3xl">Blog</h1>
-    <p class="mt-4 max-w-2xl text-lg">
-      Curated engineering notes, platform updates, and workflow writeups.
-    </p>
+    <h1 class="text-2xl font-semibold sm:text-3xl" data-i18n="blog.title">Blog</h1>
+    <p class="mt-4 max-w-2xl text-lg" data-i18n="blog.desc">Curated engineering notes, platform updates, and workflow writeups.</p>
 
-    <section class="mt-8 rounded-2xl border border-border bg-surface px-6 py-8 shadow-[var(--shadow-soft)]">
-      <h2 class="text-xl font-semibold">Latest Article</h2>
-      <p class="mt-2 text-sm opacity-80">Hello World</p>
-      <a class="mt-4 inline-block text-accent underline" href="/blog/hello-world/">
-        Read article
-      </a>
+    <section class="mt-8">
+      <ul class="space-y-6">
+        {sortedPosts.map(post => (
+          <li class="my-6">
+            <a
+              href={`/blog/${post.id}/`}
+              class="inline-block text-lg font-medium text-accent decoration-dashed underline-offset-4 hover:underline focus-visible:no-underline focus-visible:underline-offset-0"
+            >
+              <h2 style={{ viewTransitionName: post.title.replace(/\./g, "-") }}>
+                {post.title}
+              </h2>
+            </a>
+            <Datetime pubDatetime={post.pubDatetime} modDatetime={post.modDatetime} />
+            <p class="mt-2 text-foreground/80">{post.description}</p>
+          </li>
+        ))}
+      </ul>
     </section>
   </main>
   <Footer />

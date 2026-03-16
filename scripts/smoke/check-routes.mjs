@@ -106,6 +106,11 @@ const main = async () => {
   checks.push(await expectOk(baseUrl, "/"));
   checks.push(await expectOk(baseUrl, "/blog/hello-world/"));
   checks.push(await expectOk(baseUrl, "/search/"));
+  // Additional production verification endpoints for smoke validation
+  checks.push(await expectOk(baseUrl, "/rss.xml"));
+  checks.push(await expectOk(baseUrl, "/favicon.svg"));
+  checks.push(await expectOk(baseUrl, "/pagefind/pagefind-ui.js"));
+  checks.push(await expectOk(baseUrl, "/pagefind/pagefind-ui.css"));
   checks.push(await expectAdminProtected(baseUrl, "/admin"));
 
   const payload = {

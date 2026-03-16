@@ -6,8 +6,6 @@ import IconWhatsapp from "@/assets/icons/IconWhatsapp.svg";
 import IconFacebook from "@/assets/icons/IconFacebook.svg";
 import IconTelegram from "@/assets/icons/IconTelegram.svg";
 import IconPinterest from "@/assets/icons/IconPinterest.svg";
-import { SITE } from "@/config";
-
 interface Social {
   name: string;
   href: string;
@@ -19,7 +17,7 @@ export const SOCIALS: Social[] = [
   {
     name: "GitHub",
     href: "https://github.com",
-    linkTitle: `${SITE.title} on GitHub`,
+    linkTitle: "GitHub",
     icon: IconGitHub,
   },
 ] as const;

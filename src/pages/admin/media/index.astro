@@ -1,0 +1,162 @@
+---
+import Layout from "@/layouts/AdminLayout.astro";
+import { Image, Upload, Copy, Trash2 } from "lucide-react";
+---
+
+<Layout title="Media Library">
+  <!-- Header -->
+  <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <h1 class="text-2xl font-semibold" data-i18n="admin.mediaLibrary">Media Library</h1>
+    
+    <label class="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90">
+      <Upload className="h-4 w-4" />
+      <span data-i18n="admin.upload">Upload</span>
+      <input type="file" class="hidden" accept="image/*" multiple id="media-upload" />
+    </label>
+  </div>
+
+  <!-- Upload Area -->
+  <div
+    id="drop-zone"
+    class="mb-8 rounded-xl border-2 border-dashed border-border bg-muted/30 p-12 text-center transition-colors hover:border-accent hover:bg-muted/50"
+  >
+    <Image className="mx-auto h-12 w-12 text-foreground/40" />
+    <p class="mt-4 text-lg font-medium" data-i18n="admin.dropFiles">Drop files here</p>
+    <p class="mt-2 text-sm text-foreground/60" data-i18n="admin.orClickUpload">or click to upload</p>
+    <input type="file" class="hidden" accept="image/*" multiple id="drop-upload" />
+  </div>
+
+  <!-- Media Grid -->
+  <div id="media-grid" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <!-- Media items will be loaded here -->
+    <div class="col-span-full py-12 text-center text-foreground/60">
+      <Image className="mx-auto h-16 w-16 opacity-20" />
+      <p class="mt-4" data-i18n="admin.noMedia">No media files yet</p>
+      <p class="text-sm" data-i18n="admin.uploadFirst">Upload your first image</p>
+    </div>
+  </div>
+
+  <script>
+    const dropZone = document.getElementById('drop-zone');
+    const dropUpload = document.getElementById('drop-upload');
+    const mediaUpload = document.getElementById('media-upload');
+    const mediaGrid = document.getElementById('media-grid');
+
+    // Handle drag and drop
+    dropZone?.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('border-accent', 'bg-muted/50');
+    });
+
+    dropZone?.addEventListener('dragleave', () => {
+      dropZone.classList.remove('border-accent', 'bg-muted/50');
+    });
+
+    dropZone?.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('border-accent', 'bg-muted/50');
+      
+      const files = e.dataTransfer?.files;
+      if (files) {
+        handleFiles(files);
+      }
+    });
+
+    dropZone?.addEventListener('click', () => {
+      dropUpload?.click();
+    });
+
+    dropUpload?.addEventListener('change', (e) => {
+      const target = e.target;
+      if (target instanceof HTMLInputElement && target.files) {
+        handleFiles(target.files);
+      }
+    });
+
+    mediaUpload?.addEventListener('change', (e) => {
+      const target = e.target;
+      if (target instanceof HTMLInputElement && target.files) {
+        handleFiles(target.files);
+      }
+    });
+
+    async function handleFiles(files: FileList) {
+      for (const file of files) {
+        if (!file.type.startsWith('image/')) {
+          alert(`Skipping ${file.name}: Not an image file`);
+          continue;
+        }
+
+        // Show upload progress (simplified)
+        console.log(`Uploading ${file.name}...`);
+
+        // In a real implementation, you would:
+        // 1. Upload to Cloudflare R2 or Images API
+        // 2. Get the URL back
+        // 3. Add to the media grid
+
+        // For now, create a local preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const result = e.target?.result;
+          if (typeof result === 'string') {
+            addMediaItem(result, file.name);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function addMediaItem(url: string, name: string) {
+      const emptyState = mediaGrid?.querySelector('.col-span-full');
+      if (emptyState) {
+        emptyState.remove();
+      }
+
+      const item = document.createElement('div');
+      item.className = 'group relative rounded-xl border border-border bg-surface overflow-hidden';
+      item.innerHTML = `
+        <img src="${url}" alt="${name}" class="aspect-square w-full object-cover" />
+        <div class="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+          <button class="rounded-lg bg-white p-2 hover:bg-gray-100" title="Copy URL" onclick="copyUrl('${url}')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+          </button>
+          <button class="rounded-lg bg-white p-2 hover:bg-gray-100 text-red-500" title="Delete" onclick="deleteMedia(this)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+          </button>
+        </div>
+        <div class="border-t border-border p-2">
+          <p class="truncate text-xs text-foreground/60">${name}</p>
+        </div>
+      `;
+
+      mediaGrid?.appendChild(item);
+    }
+
+    // Copy URL function
+    (window as any).copyUrl = function(url: string) {
+      navigator.clipboard.writeText(url).then(() => {
+        alert('URL copied to clipboard!');
+      });
+    };
+
+    // Delete media function
+    (window as any).deleteMedia = function(button: HTMLButtonElement) {
+      if (!confirm('Are you sure you want to delete this image?')) return;
+      
+      const item = button.closest('.group');
+      item?.remove();
+
+      // Check if empty
+      if (mediaGrid?.children.length === 0) {
+        mediaGrid.innerHTML = `
+          <div class="col-span-full py-12 text-center text-foreground/60">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto opacity-20"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+            <p class="mt-4">No media files yet</p>
+            <p class="text-sm">Upload your first image</p>
+          </div>
+        `;
+      }
+    };
+  </script>
+</Layout>

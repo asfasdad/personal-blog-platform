@@ -22,7 +22,7 @@ const adapter = useCloudflareAdapter
 export default defineConfig({
   output: adapter ? 'server' : 'static',
   ...(adapter ? { adapter } : {}),
-  site: 'https://example.com',
+  site: 'https://blog.158247.xyz',
   integrations: [
     sitemap(),
   ],

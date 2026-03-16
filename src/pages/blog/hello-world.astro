@@ -9,18 +9,97 @@ export const prerender = true;
 
 <Layout title={`Hello World | ${SITE.title}`}>
   <Header />
-  <main id="main-content" class="app-layout prose max-w-none">
-    <h1>Hello World</h1>
-    <p>
-      Welcome to the production blog runtime. This route is statically rendered
-      to keep Cloudflare Worker runtime stable while preserving the content experience.
-    </p>
-    <h2>What is included</h2>
-    <ul>
-      <li>Public homepage and blog routes</li>
-      <li>Search page and newsletter entry point</li>
-      <li>Protected admin area</li>
-    </ul>
+  <div class="sticky top-0 z-20 h-1 w-full bg-border/40">
+    <div id="myBar" class="h-full w-0 bg-accent transition-[width] duration-150"></div>
+  </div>
+  <main id="main-content" class="app-layout grid gap-8 lg:grid-cols-[240px_1fr]">
+    <aside id="post-toc" class="rounded-2xl border border-border bg-surface p-4 shadow-[var(--shadow-soft)] lg:sticky lg:top-20 lg:h-fit">
+      <h2 data-i18n="helloCompat.contents" class="text-sm font-semibold uppercase tracking-wider text-foreground/70">Contents</h2>
+      <ul id="post-toc-list" class="mt-3 space-y-2 text-sm">
+        <li><a data-i18n="helloCompat.section.included" href="#what-is-included" class="hover:text-accent">What is included</a></li>
+        <li><a data-i18n="helloCompat.section.code" href="#sample-code" class="hover:text-accent">Sample code</a></li>
+        <li><a data-i18n="helloCompat.section.next" href="#next-steps" class="hover:text-accent">Next steps</a></li>
+      </ul>
+    </aside>
+
+    <article id="article" class="prose max-w-none">
+      <h1 data-i18n="helloCompat.title">Hello World</h1>
+      <p data-i18n="helloCompat.intro">
+        Welcome to the production blog runtime. This route is statically rendered
+        to keep Cloudflare Worker runtime stable while preserving the reading experience.
+      </p>
+
+      <h2 id="what-is-included" data-i18n="helloCompat.section.included">What is included</h2>
+      <ul>
+        <li>Public homepage and blog routes</li>
+        <li>Search page and newsletter entry point</li>
+        <li>Protected admin area</li>
+      </ul>
+
+      <h2 id="sample-code" data-i18n="helloCompat.section.code">Sample code</h2>
+      <pre><code>console.log("Hello, World!");</code></pre>
+
+      <h2 id="next-steps" data-i18n="helloCompat.section.next">Next steps</h2>
+      <p data-i18n="helloCompat.next">
+        Continue publishing posts from the authoring flow and validate smoke checks
+        against the production domain after each deployment.
+      </p>
+
+      <section>
+        <h2 data-i18n="helloCompat.related">Related Posts</h2>
+        <ul>
+          <li><a data-i18n="helloCompat.related.premium" href="/blog/hello-premium-world/">Hello Premium World</a></li>
+          <li><a data-i18n="helloCompat.related.all" href="/blog/">View all blog posts</a></li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 data-i18n="helloCompat.comments">Comments</h2>
+        <div id="comments" class="rounded-xl border border-border bg-surface p-4" data-state="idle"></div>
+        <p id="comments-fallback" data-i18n="helloCompat.commentsFallback" class="mt-2 hidden text-sm text-foreground/75">
+          Comments are temporarily unavailable. Please check again later.
+        </p>
+      </section>
+    </article>
   </main>
+  <script is:inline>
+    (() => {
+      const progress = document.getElementById("myBar");
+      const updateProgress = () => {
+        if (!(progress instanceof HTMLElement)) return;
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        const ratio = maxScroll > 0 ? Math.min(100, Math.max(0, (window.scrollY / maxScroll) * 100)) : 100;
+        progress.style.width = `${ratio}%`;
+      };
+
+      updateProgress();
+      window.addEventListener("scroll", updateProgress, { passive: true });
+
+      const commentsRoot = document.getElementById("comments");
+      const fallback = document.getElementById("comments-fallback");
+      if (!(commentsRoot instanceof HTMLElement)) return;
+
+      const setState = state => {
+        commentsRoot.setAttribute("data-state", state);
+      };
+
+      const script = document.createElement("script");
+      script.src = "https://giscus.app/client.js";
+      script.async = true;
+      script.addEventListener("load", () => setState("ready"));
+      script.addEventListener("error", () => {
+        setState("error");
+        if (fallback instanceof HTMLElement) fallback.classList.remove("hidden");
+      });
+
+      commentsRoot.appendChild(script);
+
+      window.setTimeout(() => {
+        if (commentsRoot.getAttribute("data-state") === "idle") {
+          setState("ready");
+        }
+      }, 1200);
+    })();
+  </script>
   <Footer />
 </Layout>

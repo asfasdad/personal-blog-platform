@@ -1,7 +1,7 @@
 export const SITE = {
-  website: "https://example.com", // replace this with your deployed domain
+  website: "https://blog.158247.xyz", // deployed domain
   author: "Author Name",
-  profile: "https://example.com/about",
+  profile: "https://blog.158247.xyz/about",
   desc: "A personal blog built with Astro.",
   title: "Personal Blog",
   ogImage: "og.png",

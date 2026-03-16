@@ -27,7 +27,7 @@ const isActive = (path: string) => {
   href="#main-content"
   class="absolute start-10 -top-full z-50 rounded-full bg-surface px-4 py-2 text-accent shadow-sm backdrop-blur-lg transition-all focus:top-4"
 >
-  Skip to content
+  <span data-i18n="ui.skipToContent">Skip to content</span>
 </a>
 
 <header
@@ -49,12 +49,13 @@ const isActive = (path: string) => {
     </a>
     <nav
       id="nav-menu"
-      class="flex w-full flex-col items-center sm:ms-2 sm:flex-row sm:justify-end sm:space-x-4 sm:py-0"
+      class="flex w-full flex-col items-center sm:ms-2 sm:min-w-0 sm:flex-row sm:justify-end sm:space-x-4 sm:py-0"
     >
       <button
         id="menu-btn"
         class="focus-outline self-end p-2 sm:hidden"
         aria-label="Open Menu"
+        data-i18n-attr="aria-label:nav.openMenu"
         aria-expanded="false"
         aria-controls="menu-items"
       >
@@ -67,17 +68,17 @@ const isActive = (path: string) => {
           "mt-4 grid w-52 grid-cols-2 place-content-center gap-2",
           "[&>li>a]:block [&>li>a]:rounded-full [&>li>a]:px-4 [&>li>a]:py-2 [&>li>a]:text-center [&>li>a]:font-medium [&>li>a]:hover:bg-surface-strong [&>li>a]:hover:text-accent sm:[&>li>a]:px-3 sm:[&>li>a]:py-1.5",
           "hidden",
-          "sm:mt-0 sm:flex sm:w-auto sm:gap-x-5 sm:gap-y-0",
+          "sm:mt-0 sm:flex sm:w-full sm:flex-wrap sm:justify-end sm:gap-x-4 sm:gap-y-0",
         ]}
       >
         <li class="col-span-2">
           <a href="/blog" class:list={{ "active-nav": isActive("/blog") }}>
-            Blog
+            <span data-i18n="nav.blog">Blog</span>
           </a>
         </li>
         <li class="col-span-2">
           <a href="/tags" class:list={{ "active-nav": isActive("/tags") }}>
-            Tags
+            <span data-i18n="nav.tags">Tags</span>
           </a>
         </li>
         <li class="col-span-2">
@@ -85,12 +86,12 @@ const isActive = (path: string) => {
             href="/projects"
             class:list={{ "active-nav": isActive("/projects") }}
           >
-            Projects
+            <span data-i18n="nav.projects">Projects</span>
           </a>
         </li>
         <li class="col-span-2">
           <a href="/about" class:list={{ "active-nav": isActive("/about") }}>
-            About
+            <span data-i18n="nav.about">About</span>
           </a>
         </li>
         {
@@ -106,13 +107,32 @@ const isActive = (path: string) => {
                 ]}
                 title="Archives"
                 aria-label="archives"
+                data-i18n-attr="title:nav.archives,aria-label:nav.archives"
               >
                 <IconArchive class="hidden sm:inline-block" />
-                <span class="sm:sr-only">Archives</span>
+                <span class="sm:sr-only" data-i18n="nav.archives">Archives</span>
               </LinkButton>
             </li>
           )
         }
+        <li class="col-span-2 flex items-center justify-center gap-2 sm:col-span-1 sm:justify-end">
+          <button
+            type="button"
+            data-lang-switch="en"
+            aria-pressed="true"
+            class="rounded-full border border-border px-3 py-1 text-xs ui-label hover:bg-surface-strong"
+          >
+            EN
+          </button>
+          <button
+            type="button"
+            data-lang-switch="zh"
+            aria-pressed="false"
+            class="rounded-full border border-border px-3 py-1 text-xs ui-label hover:bg-surface-strong"
+          >
+            中文
+          </button>
+        </li>
         <li class="col-span-1 flex items-center justify-center">
           <LinkButton
             href="/search"
@@ -122,9 +142,10 @@ const isActive = (path: string) => {
             ]}
             title="Search"
             aria-label="search"
+            data-i18n-attr="title:nav.search,aria-label:nav.search"
           >
             <IconSearch />
-            <span class="sr-only">Search</span>
+            <span class="sr-only" data-i18n="nav.search">Search</span>
           </LinkButton>
         </li>
         {
@@ -133,7 +154,8 @@ const isActive = (path: string) => {
               <button
                 id="theme-btn"
                 class="focus-outline relative size-12 p-4 sm:size-8 hover:[&>svg]:stroke-accent"
-                title="Toggles light & dark"
+                title="Toggles light and dark"
+                data-i18n-attr="title:nav.themeToggle"
                 aria-label="auto"
                 aria-live="polite"
               >
@@ -157,11 +179,17 @@ const isActive = (path: string) => {
 
     if (!menuBtn || !menuItems || !menuIcon || !closeIcon) return;
 
+    const menuLabel = (open) => {
+      const isZh = (document.documentElement.lang || "en").toLowerCase().startsWith("zh");
+      if (isZh) return open ? "关闭菜单" : "打开菜单";
+      return open ? "Close Menu" : "Open Menu";
+    };
+
     menuBtn.addEventListener("click", () => {
       const openMenu = menuBtn.getAttribute("aria-expanded") === "true";
 
       menuBtn.setAttribute("aria-expanded", openMenu ? "false" : "true");
-      menuBtn.setAttribute("aria-label", openMenu ? "Open Menu" : "Close Menu");
+      menuBtn.setAttribute("aria-label", menuLabel(openMenu));
 
       menuItems.classList.toggle("hidden");
       menuIcon.classList.toggle("hidden");

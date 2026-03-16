@@ -11,11 +11,29 @@ export const prerender = false;
   <Header />
   <main id="main-content" class="app-layout mt-8">
     <section class="mx-auto max-w-lg rounded-2xl border border-border bg-surface p-6 shadow-[var(--shadow-soft)]">
-      <h1 class="text-2xl font-semibold">Admin Access</h1>
-      <p class="mt-2 text-foreground/80">Enter the owner access key to open the operations console.</p>
+      <!-- Language Switcher -->
+      <div class="mb-4 flex justify-end gap-2">
+        <button
+          data-lang-switch="en"
+          class="rounded border border-border px-2 py-1 text-sm hover:bg-muted"
+          aria-pressed="false"
+        >
+          EN
+        </button>
+        <button
+          data-lang-switch="zh"
+          class="rounded border border-border px-2 py-1 text-sm hover:bg-muted"
+          aria-pressed="false"
+        >
+          中文
+        </button>
+      </div>
+
+      <h1 class="text-2xl font-semibold" data-i18n="admin.loginTitle">Admin Access</h1>
+      <p class="mt-2 text-foreground/80" data-i18n="admin.loginDesc">Enter the owner access key to open the operations console.</p>
 
       <form method="post" action="/api/admin/login" class="mt-5 space-y-3">
-        <label class="ui-label block text-sm" for="admin-key">Access key</label>
+        <label class="ui-label block text-sm" for="admin-key" data-i18n="admin.accessKey">Access key</label>
         <input
           id="admin-key"
           name="key"
@@ -27,7 +45,7 @@ export const prerender = false;
           type="submit"
           class="ui-label rounded-lg border border-border bg-surface-strong px-4 py-2 hover:bg-muted"
         >
-          Open Admin Console
+          <span data-i18n="admin.openConsole">Open Admin Console</span>
         </button>
       </form>
     </section>

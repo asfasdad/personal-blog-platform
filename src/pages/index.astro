@@ -23,7 +23,7 @@ export const prerender = true;
       ]}
     >
       <h1 class="my-4 inline-block text-4xl font-bold sm:my-8 sm:text-5xl">
-        Essays, Projects, and Field Notes
+        <span data-i18n="home.heroTitle">Essays, Projects, and Field Notes</span>
       </h1>
       <a
         target="_blank"
@@ -41,14 +41,13 @@ export const prerender = true;
       </a>
 
       <p class="max-w-2xl text-lg">
-        A focused publishing space for long-form engineering writing, build
-        logs, and curated project updates.
+        <span data-i18n="home.heroDesc">A focused publishing space for long-form engineering writing, build logs, and curated project updates.</span>
       </p>
       {
         // only display if at least one social link is enabled
         SOCIALS.length > 0 && (
           <div class="mt-4 flex max-sm:flex-col sm:items-center">
-            <div class="me-2 mb-1 whitespace-nowrap sm:mb-0">Social Links:</div>
+            <div class="me-2 mb-1 whitespace-nowrap sm:mb-0" data-i18n="home.social">Social Links:</div>
             <Socials />
           </div>
         )
@@ -61,10 +60,8 @@ export const prerender = true;
         "mt-8 rounded-2xl border border-border bg-surface px-6 py-8 shadow-[var(--shadow-soft)]",
       ]}
     >
-      <h2 class="text-2xl font-semibold tracking-wide">Featured</h2>
-      <p class="mt-3 opacity-85">
-        Read the launch post for this production setup.
-      </p>
+      <h2 class="text-2xl font-semibold tracking-wide" data-i18n="home.featured">Featured</h2>
+      <p class="mt-3 opacity-85" data-i18n="home.featuredDesc">Read the launch post for this production setup.</p>
       <a href="/blog/hello-world/" class="mt-4 inline-block text-accent underline">
         Hello World
       </a>
@@ -72,9 +69,12 @@ export const prerender = true;
 
     <div class="my-8 text-center">
       <LinkButton href="/blog/">
-        All Articles
+        <span data-i18n="home.allArticles">All Articles</span>
         <IconArrowRight class="inline-block rtl:-rotate-180" />
       </LinkButton>
+      <div class="mt-4">
+        <a href="/start-here/" class="text-accent underline" data-i18n="home.firstTimeGuide">First-Time Guide</a>
+      </div>
     </div>
 
     <NewsletterSignup />

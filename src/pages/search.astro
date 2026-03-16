@@ -10,17 +10,14 @@ import { SITE } from "@/config";
   <link rel="stylesheet" href="/pagefind/pagefind-ui.css" />
   <Header />
   <main id="main-content" class="app-layout">
-    <h1 class="text-2xl font-semibold sm:text-3xl">Search</h1>
-    <p class="mt-4 mb-8 max-w-2xl">
-      Search posts by title, summary, and tags. Results are generated from the
-      static build index.
-    </p>
+    <h1 class="text-2xl font-semibold sm:text-3xl" data-i18n="search.title">Search</h1>
+    <p class="mt-4 mb-8 max-w-2xl" data-i18n="search.desc">Search posts by title, summary, and tags. Results are generated from the static build index.</p>
     <p id="search-status" class="rounded-lg border border-border bg-surface px-4 py-3">
-      Loading search index...
+      <span data-i18n="search.loading">Loading search index...</span>
     </p>
     <div id="search" class="mt-8"></div>
     <p id="search-empty" class="mt-6 hidden rounded-lg border border-border bg-surface px-4 py-3">
-      No results found. Try a broader term or a tag keyword.
+      <span data-i18n="search.empty">No results found. Try a broader term or a tag keyword.</span>
     </p>
   </main>
   <Footer />
@@ -29,6 +26,17 @@ import { SITE } from "@/config";
 <script>
   const status = document.querySelector("#search-status");
   const emptyState = document.querySelector("#search-empty");
+  const getLang = () => (document.documentElement.lang || "en").toLowerCase().startsWith("zh") ? "zh" : "en";
+  const i18n = {
+    en: {
+      ready: "Search ready.",
+      unavailable: "Search index is unavailable in this environment. Run a production build to enable Pagefind.",
+    },
+    zh: {
+      ready: "搜索已就绪。",
+      unavailable: "当前环境不可用搜索索引。请运行生产构建以启用 Pagefind。",
+    },
+  };
 
   const setStatus = (message: string) => {
     if (!status) return;
@@ -40,7 +48,7 @@ import { SITE } from "@/config";
       (document.querySelector(".pagefind-ui__search-input") as HTMLInputElement | null)
         ?.value
         .trim().length;
-    const resultCount = document.querySelectorAll(".pagefind-ui__result").length;
+    const resultCount = Array.from(document.querySelectorAll(".pagefind-ui__result-link")).filter(node => node instanceof HTMLElement && node.offsetParent !== null).length;
 
     if (!emptyState) return;
     if (hasQuery && resultCount === 0) {
@@ -80,12 +88,17 @@ import { SITE } from "@/config";
         resetStyles: false,
       });
 
-      setStatus("Search ready.");
+      setStatus(i18n[getLang()].ready);
       window.setTimeout(updateEmptyState, 200);
       document.addEventListener("input", updateEmptyState);
       document.addEventListener("click", () => window.setTimeout(updateEmptyState, 100));
+      const searchRoot = document.querySelector("#search");
+      if (searchRoot instanceof HTMLElement) {
+        const observer = new MutationObserver(() => updateEmptyState());
+        observer.observe(searchRoot, { childList: true, subtree: true });
+      }
     } catch {
-      setStatus("Search index is unavailable in this environment. Run a production build to enable Pagefind.");
+      setStatus(i18n[getLang()].unavailable);
     }
   };
 

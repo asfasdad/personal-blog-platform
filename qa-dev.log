@@ -1,0 +1,24 @@
+
+> personal-blog-platform@ dev D:\work\网页部署
+> astro dev "--host" "127.0.0.1" "--port" "4321"
+
+Proxy environment variables detected. We'll use your proxy for fetch requests.
+[vite] connected.
+[2m09:05:07[22m [34m[types][39m Generated [2m2ms[22m
+[vite] connected.
+[2m09:05:09[22m [34m[content][39m Syncing content
+[2m09:05:09[22m [34m[content][39m Astro config changed
+[2m09:05:09[22m [34m[content][39m Clearing content store
+[2m09:05:09[22m [34m[content][39m Synced content
+[2m09:05:09[22m [34m[vite][39m Re-optimizing dependencies because vite config has changed
+[42m[1m astro [22m[49m [32mv6.0.4[39m [2mready in[22m 11571 [2mms[22m
+[2m┃[22m Local    [36mhttp://127.0.0.1:4321/[39m
+[2m09:05:10[22m [32mwatching for file changes...[39m
+[2m09:05:16[22m [34m[200][39m [34mHEAD[39m / [2m157ms[22m
+[2m09:05:31[22m [34m[200][39m / [2m23ms[22m
+[2m09:05:35[22m [34m[vite][39m [32m✨ new dependencies optimized: [33mastro/runtime/client/dev-toolbar/entrypoint.js, astro/virtual-modules/transitions-router.js, astro/virtual-modules/transitions-types.js, astro/virtual-modules/transitions-events.js, astro/virtual-modules/transitions-swap-functions.js[32m[39m
+[2m09:05:35[22m [34m[vite][39m [32m✨ optimized dependencies changed. reloading[39m
+[2m09:06:06[22m [34m[200][39m /search/ [2m94ms[22m
+[2m09:06:06[22m [33m[404][39m /pagefind/pagefind-ui.css [2m551ms[22m
+[2m09:06:07[22m [33m[404][39m /pagefind/pagefind-ui.js [2m14ms[22m
+ ELIFECYCLE  Command failed with exit code 4294967295.

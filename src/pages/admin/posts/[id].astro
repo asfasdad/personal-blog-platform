@@ -1,0 +1,211 @@
+---
+import Layout from "@/layouts/AdminLayout.astro";
+import { getCollection } from "astro:content";
+
+const { id } = Astro.params;
+
+// Get post data
+const posts = await getCollection("blog");
+const post = posts.find(p => p.slug === id);
+
+if (!post) {
+  return Astro.redirect("/admin/posts");
+}
+
+const { title, description, tags, pubDatetime, draft } = post.data;
+const content = post.body;
+---
+
+<Layout title={`Edit: ${title}`}>
+  <div class="mx-auto max-w-4xl">
+    <!-- Header -->
+    <div class="mb-6 flex items-center justify-between">
+      <h1 class="text-2xl font-semibold" data-i18n="admin.editPost">Edit Post</h1>
+      <a
+        href="/admin/posts"
+        class="text-sm text-foreground/60 hover:text-foreground"
+      >
+        ← Back to Posts
+      </a>
+    </div>
+
+    <!-- Form -->
+    <form id="edit-post-form" class="space-y-6" data-post-id={id}>
+      <!-- Title -->
+      <div>
+        <label class="mb-2 block text-sm font-medium" data-i18n="admin.postTitle">
+          Title *
+        </label>
+        <input
+          type="text"
+          name="title"
+          id="post-title"
+          required
+          value={title}
+          class="w-full rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none"
+        />
+      </div>
+
+      <!-- Slug -->
+      <div>
+        <label class="mb-2 block text-sm font-medium" data-i18n="admin.postSlug">
+          Slug
+        </label>
+        <input
+          type="text"
+          name="slug"
+          id="post-slug"
+          value={id}
+          readonly
+          class="w-full rounded-lg border border-border bg-muted px-4 py-2 text-foreground/60"
+        />
+        <p class="mt-1 text-xs text-foreground/60">URL: /blog/{id}/</p>
+      </div>
+
+      <!-- Description -->
+      <div>
+        <label class="mb-2 block text-sm font-medium" data-i18n="admin.postDescription">
+          Description
+        </label>
+        <textarea
+          name="description"
+          id="post-description"
+          rows="2"
+          class="w-full rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none"
+        >{description}</textarea>
+      </div>
+
+      <!-- Tags -->
+      <div>
+        <label class="mb-2 block text-sm font-medium" data-i18n="admin.postTags">
+          Tags
+        </label>
+        <input
+          type="text"
+          name="tags"
+          id="post-tags"
+          value={tags?.join(", ")}
+          class="w-full rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none"
+          placeholder="tag1, tag2, tag3"
+        />
+      </div>
+
+      <!-- Status -->
+      <div>
+        <label class="mb-2 block text-sm font-medium" data-i18n="admin.postStatus">
+          Status
+        </label>
+        <select
+          name="draft"
+          id="post-status"
+          class="w-full rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none"
+        >
+          <option value="false" selected={!draft}>Published</option>
+          <option value="true" selected={draft}>Draft</option>
+        </select>
+      </div>
+
+      <!-- Content -->
+      <div>
+        <label class="mb-2 block text-sm font-medium" data-i18n="admin.postContent">
+          Content *
+        </label>
+        <div id="editor-container" class="min-h-[400px] rounded-lg border border-border">
+          <textarea
+            name="content"
+            id="post-content"
+            required
+            rows="15"
+            class="w-full rounded-lg bg-background px-4 py-2 font-mono text-sm focus:border-accent focus:outline-none"
+          >{content}</textarea>
+        </div>
+        <p class="mt-2 text-xs text-foreground/60">Supports Markdown formatting</p>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex gap-3 pt-4">
+        <button
+          type="submit"
+          class="rounded-lg bg-accent px-6 py-2 font-medium text-white hover:bg-accent/90"
+        >
+          Save Changes
+        </button>
+        
+        <a
+          href={`/blog/${id}/`}
+          target="_blank"
+          class="rounded-lg border border-border bg-surface px-6 py-2 font-medium hover:bg-muted"
+        >
+          Preview
+        </a>
+        
+        <a
+          href="/admin/posts"
+          class="rounded-lg border border-border bg-background px-6 py-2 font-medium hover:bg-muted"
+        >
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById('edit-post-form');
+    const postId = form?.getAttribute('data-post-id');
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(form);
+      const data = {
+        title: formData.get('title'),
+        description: formData.get('description'),
+        tags: formData.get('tags')?.toString().split(',').map(t => t.trim()).filter(Boolean),
+        content: formData.get('content'),
+        draft: formData.get('draft') === 'true',
+      };
+
+      try {
+        const response = await fetch(`/api/admin/posts/${postId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        if (response.ok) {
+          alert('Post updated successfully!');
+          window.location.href = '/admin/posts';
+        } else {
+          const error = await response.text();
+          alert('Error updating post: ' + error);
+        }
+      } catch (err) {
+        alert('Error: ' + err);
+      }
+    });
+
+    // Auto-save to localStorage
+    let autoSaveTimeout;
+    const inputs = form?.querySelectorAll('input, textarea, select');
+    
+    function autoSave() {
+      const formData = new FormData(form);
+      const data = {
+        title: formData.get('title'),
+        description: formData.get('description'),
+        tags: formData.get('tags'),
+        content: formData.get('content'),
+        draft: formData.get('draft'),
+        savedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(`edit-post-${postId}`, JSON.stringify(data));
+    }
+
+    inputs?.forEach(input => {
+      input.addEventListener('input', () => {
+        clearTimeout(autoSaveTimeout);
+        autoSaveTimeout = setTimeout(autoSave, 2000);
+      });
+    });
+  </script>
+</Layout>

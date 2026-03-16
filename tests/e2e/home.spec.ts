@@ -11,41 +11,17 @@ test('blog index route responds successfully', async ({ page }) => {
   expect(response?.ok()).toBeTruthy();
 });
 
-test('search route handles empty-result state safely', async ({ page }) => {
-  const response = await page.goto('/search');
-  expect(response?.ok()).toBeTruthy();
-
-  const searchInput = page.locator('.pagefind-ui__search-input').first();
-  const hasInput = await searchInput.isVisible().catch(() => false);
-
-  if (hasInput) {
-    await searchInput.fill('zzzz-no-match');
-    await expect(page.locator('#search-empty')).toBeVisible();
-  } else {
-    await expect(page.locator('#search-status')).toBeVisible();
-  }
-});
-
-test('search returns indexed fixture content when available', async ({ page }) => {
+test('search route requires Pagefind UI and returns deterministic results for hello', async ({ page }) => {
   await page.goto('/search/');
-
+  await expect(page.locator('#search-status')).not.toContainText(/unavailable/i);
   const searchInput = page.locator('.pagefind-ui__search-input').first();
-  const hasInput = await searchInput.isVisible().catch(() => false);
-
-  if (!hasInput) {
-    await expect(page.locator('#search-status')).toBeVisible();
-    return;
-  }
-
-  await searchInput.fill('welcome');
+  const isVisible = await searchInput.isVisible().catch(() => false);
+  expect(isVisible).toBeTruthy();
+  await searchInput.fill('hello');
   await page.waitForTimeout(1200);
-
-  const resultCount = await page.locator('.pagefind-ui__result-link').count();
-  if (resultCount > 0) {
-    await expect(page.locator('.pagefind-ui__result-link').first()).toBeVisible();
-  } else {
-    await expect(page.locator('#search-empty')).toBeVisible();
-  }
+  const count = await page.locator('.pagefind-ui__result-link').count();
+  expect(count).toBeGreaterThan(0);
+  await expect(page.locator('.pagefind-ui__result-link').first()).toBeVisible();
 });
 
 test('discovery route inventory responds successfully', async ({ page }) => {

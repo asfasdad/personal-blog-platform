@@ -1,0 +1,149 @@
+---
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import { SITE } from "@/config";
+
+export interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+
+// Check if user is logged in
+const adminAccess = Astro.cookies.get("admin_access")?.value;
+if (!adminAccess && Astro.url.pathname !== "/admin/login") {
+  return Astro.redirect("/admin/login");
+}
+---
+
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title} | {SITE.title} Admin</title>
+  </head>
+  <body class="bg-background text-foreground antialiased">
+    <div class="flex h-screen overflow-hidden">
+      <!-- Sidebar -->
+      <aside
+        id="admin-sidebar"
+        class="fixed left-0 top-0 z-40 h-screen w-64 -translate-x-full border-r border-border bg-surface transition-transform duration-300 lg:static lg:translate-x-0"
+      >
+        <div class="flex h-full flex-col">
+          <!-- Logo -->
+          <div class="flex h-16 items-center border-b border-border px-6">
+            <a href="/admin" class="flex items-center gap-2 text-lg font-semibold">
+              <span class="text-accent">Admin</span>
+              <span class="text-foreground/60">Panel</span>
+            </a>
+          </div>
+
+          <!-- Navigation -->
+          <nav class="flex-1 overflow-y-auto px-4 py-4">
+            <ul class="space-y-1" id="admin-nav">
+              <!-- Nav items will be populated by client-side JS -->
+            </ul>
+          </nav>
+
+          <!-- Language Switcher -->
+          <div class="border-t border-border p-4">
+            <div class="flex gap-2">
+              <button
+                data-lang-switch="en"
+                class="flex-1 rounded border border-border px-3 py-1.5 text-sm hover:bg-muted"
+              >
+                EN
+              </button>
+              <button
+                data-lang-switch="zh"
+                class="flex-1 rounded border border-border px-3 py-1.5 text-sm hover:bg-muted"
+              >
+                中文
+              </button>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Mobile Sidebar Toggle -->
+      <button
+        id="sidebar-toggle"
+        class="fixed left-4 top-4 z-50 rounded-lg border border-border bg-surface p-2 lg:hidden"
+        aria-label="Toggle sidebar"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+
+      <!-- Overlay for mobile -->
+      <div
+        id="sidebar-overlay"
+        class="fixed inset-0 z-30 bg-black/50 lg:hidden hidden"
+      ></div>
+
+      <!-- Main Content -->
+      <main class="flex flex-1 flex-col overflow-hidden">
+        <!-- Top Header -->
+        <header class="flex h-16 items-center justify-between border-b border-border bg-surface px-6">
+          <h1 class="text-xl font-semibold" data-i18n="admin.pageTitle">{title}</h1>
+          <div class="flex items-center gap-4">
+            <a
+              href="/"
+              target="_blank"
+              class="text-sm text-foreground/60 hover:text-foreground"
+            >
+              View Site →
+            </a>
+            <form method="post" action="/api/admin/logout">
+              <button
+                type="submit"
+                class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
+                data-i18n="admin.logout"
+              >
+                Logout
+              </button>
+            </form>
+          </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="flex-1 overflow-auto p-6">
+          <slot />
+        </div>
+      </main>
+    </div>
+
+    <script>
+      // Sidebar toggle
+      const sidebar = document.getElementById("admin-sidebar");
+      const toggle = document.getElementById("sidebar-toggle");
+      const overlay = document.getElementById("sidebar-overlay");
+
+      toggle?.addEventListener("click", () => {
+        sidebar?.classList.toggle("-translate-x-full");
+        overlay?.classList.toggle("hidden");
+      });
+
+      overlay?.addEventListener("click", () => {
+        sidebar?.classList.add("-translate-x-full");
+        overlay?.classList.add("hidden");
+      });
+    </script>
+  </body>
+</html>

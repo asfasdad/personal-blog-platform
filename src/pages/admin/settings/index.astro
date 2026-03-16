@@ -1,0 +1,182 @@
+---
+import Layout from "@/layouts/AdminLayout.astro";
+import { SITE } from "@/config";
+---
+
+<Layout title="Settings">
+  <div class="mx-auto max-w-2xl">
+    <h1 class="mb-6 text-2xl font-semibold" data-i18n="admin.settings">Settings</h1>
+
+    <form id="settings-form" class="space-y-8">
+      <!-- Site Settings -->
+      <section class="rounded-xl border border-border bg-surface p-6">
+        <h2 class="mb-4 text-lg font-semibold" data-i18n="admin.siteSettings">Site Settings</h2>
+        
+        <div class="space-y-4">
+          <div>
+            <label class="mb-2 block text-sm font-medium" data-i18n="admin.siteTitle">Site Title</label>
+            <input
+              type="text"
+              name="siteTitle"
+              value={SITE.title}
+              class="w-full rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label class="mb-2 block text-sm font-medium" data-i18n="admin.siteDescription">Site Description</label>
+            <textarea
+              name="siteDescription"
+              rows="3"
+              class="w-full rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none"
+            >{SITE.desc}</textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- Author Settings -->
+      <section class="rounded-xl border border-border bg-surface p-6">
+        <h2 class="mb-4 text-lg font-semibold" data-i18n="admin.authorSettings">Author Settings</h2>
+        
+        <div class="space-y-4">
+          <div>
+            <label class="mb-2 block text-sm font-medium" data-i18n="admin.authorName">Author Name</label>
+            <input
+              type="text"
+              name="authorName"
+              value={SITE.author}
+              class="w-full rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label class="mb-2 block text-sm font-medium" data-i18n="admin.authorBio">Author Bio</label>
+            <textarea
+              name="authorBio"
+              rows="3"
+              class="w-full rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none"
+              placeholder="Brief bio about the author..."
+            ></textarea>
+          </div>
+
+          <div>
+            <label class="mb-2 block text-sm font-medium" data-i18n="admin.socialLinks">Social Links</label>
+            <div class="space-y-2">
+              <input
+                type="url"
+                name="githubUrl"
+                placeholder="GitHub URL"
+                class="w-full rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none"
+              />
+              <input
+                type="url"
+                name="twitterUrl"
+                placeholder="Twitter URL"
+                class="w-full rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Feature Toggles -->
+      <section class="rounded-xl border border-border bg-surface p-6">
+        <h2 class="mb-4 text-lg font-semibold" data-i18n="admin.features">Features</h2>
+        
+        <div class="space-y-3">
+          <label class="flex items-center justify-between">
+            <span class="text-sm font-medium" data-i18n="admin.enableComments">Enable Comments</span>
+            <input type="checkbox" name="enableComments" class="h-5 w-5 rounded border-border" checked />
+          </label>
+
+          <label class="flex items-center justify-between">
+            <span class="text-sm font-medium" data-i18n="admin.enableRss">Enable RSS Feed</span>
+            <input type="checkbox" name="enableRss" class="h-5 w-5 rounded border-border" checked />
+          </label>
+
+          <label class="flex items-center justify-between">
+            <span class="text-sm font-medium" data-i18n="admin.enableSearch">Enable Search</span>
+            <input type="checkbox" name="enableSearch" class="h-5 w-5 rounded border-border" checked />
+          </label>
+
+          <label class="flex items-center justify-between">
+            <span class="text-sm font-medium" data-i18n="admin.enableNewsletter">Enable Newsletter</span>
+            <input type="checkbox" name="enableNewsletter" class="h-5 w-5 rounded border-border" />
+          </label>
+        </div>
+      </section>
+
+      <!-- Integrations -->
+      <section class="rounded-xl border border-border bg-surface p-6">
+        <h2 class="mb-4 text-lg font-semibold" data-i18n="admin.integrations">Integrations</h2>
+        
+        <div class="space-y-4">
+          <div>
+            <label class="mb-2 block text-sm font-medium" data-i18n="admin.googleAnalytics">Google Analytics ID</label>
+            <input
+              type="text"
+              name="googleAnalytics"
+              placeholder="G-XXXXXXXXXX"
+              class="w-full rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label class="mb-2 block text-sm font-medium" data-i18n="admin.cloudflareAnalytics">Cloudflare Analytics Token</label>
+            <input
+              type="text"
+              name="cloudflareAnalytics"
+              placeholder="Your Cloudflare Web Analytics token"
+              class="w-full rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none"
+            />
+          </div>
+        </div>
+      </section>
+
+      <!-- Save Button -->
+      <div class="flex gap-3">
+        <button
+          type="submit"
+          class="rounded-lg bg-accent px-6 py-2 font-medium text-white hover:bg-accent/90"
+        >
+          Save Settings
+        </button>
+        
+        <button
+          type="reset"
+          class="rounded-lg border border-border bg-background px-6 py-2 font-medium hover:bg-muted"
+        >
+          Reset
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById('settings-form');
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData);
+
+      try {
+        const response = await fetch('/api/admin/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        if (response.ok) {
+          alert('Settings saved successfully!');
+        } else {
+          const error = await response.text();
+          alert('Error saving settings: ' + error);
+        }
+      } catch (err) {
+        alert('Error: ' + err);
+      }
+    });
+  </script>
+</Layout>

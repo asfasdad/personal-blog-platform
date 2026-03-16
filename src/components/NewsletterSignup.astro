@@ -1,36 +1,37 @@
 ---
 ---
 
-<section
+  <section
   id="newsletter"
   class="mt-8 rounded-2xl border border-border bg-surface px-6 py-8 shadow-[var(--shadow-soft)]"
   data-pagefind-ignore
->
-  <h2 class="text-2xl font-semibold tracking-wide">Newsletter</h2>
-  <p class="mt-2 max-w-2xl text-foreground/85">
+  >
+  <h2 data-i18n="newsletter.heading" class="text-2xl font-semibold tracking-wide">Newsletter</h2>
+  <p data-i18n="newsletter.subtitle" class="mt-2 max-w-2xl text-foreground/85">
     Get new posts and project notes in your inbox. No spam.
   </p>
 
   <form id="newsletter-form" class="mt-5 flex flex-col gap-3 sm:flex-row sm:items-start" novalidate>
-    <div class="w-full">
-      <label class="ui-label mb-1 block text-sm" for="newsletter-email">Email address</label>
+    <div class="w-full sm:min-w-0 sm:flex-1">
+      <label class="ui-label mb-1 block text-sm" for="newsletter-email" data-i18n="newsletter.label">Email address</label>
       <input
         id="newsletter-email"
         name="email"
         type="email"
         required
         autocomplete="email"
-        placeholder="you@example.com"
+        placeholder="you@example.com" data-i18n-attr="placeholder:newsletter.placeholder"
         class="w-full rounded-lg border border-border bg-background px-3 py-2"
         aria-describedby="newsletter-error newsletter-message"
       />
-      <p id="newsletter-error" class="mt-1 hidden text-sm text-red-700"></p>
+      <p id="newsletter-error" class="mt-1 hidden text-sm text-red-700" data-i18n="newsletter.error.invalidEmail"></p>
     </div>
-
+    
     <button
       id="newsletter-submit"
       type="submit"
       class="ui-label rounded-lg border border-border bg-surface-strong px-4 py-2 hover:bg-muted"
+      data-i18n="newsletter.submit"
     >
       Subscribe
     </button>
@@ -61,10 +62,48 @@
       messageNode.textContent = message;
     };
 
+    // Simple localized translation helper for dynamic messages
+    const getLang = () => document.documentElement.lang === "zh-CN" ? "zh" : "en";
+    const tDyn = (part) => {
+      const lang = getLang();
+      const dict = {
+        en: {
+          newsletter: {
+            heading: "Newsletter",
+            subtitle: "Get new posts and project notes in your inbox. No spam.",
+            label: "Email address",
+            placeholder: "you@example.com",
+            submit: "Subscribe",
+            submitting: "Subscribing...",
+            errorInvalidEmail: "Please enter a valid email address.",
+            duplicate: "You are already subscribed. Thanks for staying with us.",
+            success: "Subscribed successfully. Please check your inbox.",
+            unavailable: "Subscription service is temporarily unavailable. Please retry shortly.",
+            retry: "Unable to subscribe right now. Please retry.",
+          },
+        },
+        zh: {
+          newsletter: {
+            heading: "通讯订阅",
+            subtitle: "将新文章和项目笔记发送至您的邮箱。绝不垃圾邮件。",
+            label: "邮箱地址",
+            placeholder: "请输入邮箱地址",
+            submit: "订阅",
+            submitting: "正在订阅…",
+            errorInvalidEmail: "请输入有效的邮箱地址。",
+            duplicate: "您已订阅。感谢关注。",
+            success: "订阅成功。请检查您的邮箱。",
+            unavailable: "订阅服务暂不可用，请稍后再试。",
+            retry: "当前无法订阅，请重试。",
+          },
+        },
+      };
+      return dict[lang]?.newsletter?.[part] ?? part;
+    };
     const setSubmitting = isSubmitting => {
       if (submitButton instanceof HTMLButtonElement) {
         submitButton.disabled = isSubmitting;
-        submitButton.textContent = isSubmitting ? "Subscribing..." : "Subscribe";
+        submitButton.textContent = isSubmitting ? tDyn("submitting") : tDyn("submit");
       }
     };
 
@@ -79,7 +118,7 @@
       setMessage("");
 
       if (!isValidEmail(email)) {
-        setError("Please enter a valid email address.");
+        setError(tDyn("errorInvalidEmail"));
         return;
       }
 
@@ -95,27 +134,27 @@
 
         if (response.ok && payload) {
           if (payload.status === "already_subscribed") {
-            setMessage("You are already subscribed. Thanks for staying with us.");
+            setMessage(tDyn("duplicate"));
           } else {
-            setMessage("Subscribed successfully. Please check your inbox.");
+            setMessage(tDyn("success"));
           }
           emailInput.value = "";
           return;
         }
 
         if (response.status === 400) {
-          setError((payload && payload.message) || "Please enter a valid email address.");
+          setError((payload && payload.message) || tDyn("errorInvalidEmail"));
           return;
         }
 
         if (response.status === 503) {
-          setMessage("Subscription service is temporarily unavailable. Please retry shortly.");
+          setMessage(tDyn("unavailable"));
           return;
         }
 
-        setMessage("Unable to subscribe right now. Please retry.");
+        setMessage(tDyn("retry"));
       } catch {
-        setMessage("Unable to subscribe right now. Please retry.");
+        setMessage(tDyn("retry"));
       } finally {
         setSubmitting(false);
       }
