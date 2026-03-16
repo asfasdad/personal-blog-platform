@@ -23,7 +23,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT || 'personal-blog-platform' }}
+      PAGES_PROJECT: personal-blog-platform
       PRODUCTION_BRANCH: ${{ vars.CLOUDFLARE_PRODUCTION_BRANCH || 'main' }}
     outputs:
       deploy_url: ${{ steps.meta.outputs.deploy_url }}
