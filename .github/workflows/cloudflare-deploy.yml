@@ -25,6 +25,7 @@ jobs:
     env:
       PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT || 'blog-cms' }}
       PRODUCTION_BRANCH: ${{ vars.CLOUDFLARE_PRODUCTION_BRANCH || 'main' }}
+      PRODUCTION_URL: ${{ vars.CLOUDFLARE_PRODUCTION_URL || 'https://blog.158247.xyz' }}
     outputs:
       deploy_url: ${{ steps.meta.outputs.deploy_url }}
       deploy_target: ${{ steps.meta.outputs.deploy_target }}
@@ -72,69 +73,19 @@ jobs:
             fi
           fi
 
-          DEPLOY_URL="https://${PAGES_PROJECT}.pages.dev"
-          if [ "${TARGET}" = "preview" ]; then
-            SAFE_BRANCH=$(echo "${BRANCH_NAME}" | tr '/_' '-')
-            DEPLOY_URL="https://${SAFE_BRANCH}.${PAGES_PROJECT}.pages.dev"
-          fi
+          DEPLOY_URL="${PRODUCTION_URL}"
 
           echo "deploy_target=${TARGET}" >> "$GITHUB_OUTPUT"
           echo "deploy_branch=${BRANCH_NAME}" >> "$GITHUB_OUTPUT"
           echo "deploy_url=${DEPLOY_URL}" >> "$GITHUB_OUTPUT"
 
-      - name: Deploy candidate 1 (configured/default)
-        id: deploy1
+      - name: Deploy to Cloudflare Workers
+        id: deploy
         uses: cloudflare/wrangler-action@v3
-        continue-on-error: true
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           command: >-
-            pages deploy ./dist
-            --project-name=${{ env.PAGES_PROJECT }}
-            --branch=${{ steps.meta.outputs.deploy_branch }}
-
-      - name: Deploy candidate 2 (personal-blog-platform)
-        id: deploy2
-        if: steps.deploy1.outcome == 'failure'
-        uses: cloudflare/wrangler-action@v3
-        continue-on-error: true
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          command: >-
-            pages deploy ./dist
-            --project-name=personal-blog-platform
-            --branch=${{ steps.meta.outputs.deploy_branch }}
-
-      - name: Deploy candidate 3 (blog-cms)
-        id: deploy3
-        if: steps.deploy1.outcome == 'failure' && steps.deploy2.outcome == 'failure'
-        uses: cloudflare/wrangler-action@v3
-        continue-on-error: true
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          command: >-
-            pages deploy ./dist
-            --project-name=blog-cms
-            --branch=${{ steps.meta.outputs.deploy_branch }}
-
-      - name: Deploy candidate 4 (blog-158247-xyz)
-        id: deploy4
-        if: steps.deploy1.outcome == 'failure' && steps.deploy2.outcome == 'failure' && steps.deploy3.outcome == 'failure'
-        uses: cloudflare/wrangler-action@v3
-        continue-on-error: true
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          command: >-
-            pages deploy ./dist
-            --project-name=blog-158247-xyz
-            --branch=${{ steps.meta.outputs.deploy_branch }}
-
-      - name: Fail if all candidates failed
-        if: steps.deploy1.outcome == 'failure' && steps.deploy2.outcome == 'failure' && steps.deploy3.outcome == 'failure' && steps.deploy4.outcome == 'failure'
-        shell: bash
-        run: |
-          echo "::error::Cloudflare deploy failed for all candidate project names."
-          exit 1
+            deploy --config dist/server/wrangler.json
 
       - name: Wait for deployment propagation
         shell: bash
