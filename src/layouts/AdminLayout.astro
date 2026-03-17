@@ -1,5 +1,6 @@
 ---
 import { SITE } from "@/config";
+import "@/styles/global.css";
 
 export interface Props {
   title: string;
@@ -9,13 +10,31 @@ const { title } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en" class="scroll-smooth">
+<html dir={SITE.dir} lang={`${SITE.lang ?? "en"}`} class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="robots" content="noindex, nofollow" />
     <title>{title} | {SITE.title} Admin</title>
+
+    <script is:inline>
+      (function () {
+        const initialColorScheme = "";
+        const currentTheme = localStorage.getItem("theme");
+
+        function getPreferTheme() {
+          if (currentTheme) return currentTheme;
+          if (initialColorScheme) return initialColorScheme;
+          return window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light";
+        }
+
+        const themeValue = getPreferTheme();
+        document.firstElementChild?.setAttribute("data-theme", themeValue);
+      })();
+    </script>
   </head>
   <body class="bg-background text-foreground antialiased">
     <div class="flex h-screen overflow-hidden">
@@ -137,5 +156,7 @@ const { title } = Astro.props;
         overlay?.classList.add("hidden");
       });
     </script>
+    <script src="../scripts/theme.ts"></script>
+    <script src="../scripts/i18n.ts"></script>
   </body>
 </html>
