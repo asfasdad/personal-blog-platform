@@ -9,9 +9,9 @@ export interface Props {
 const { title } = Astro.props;
 const currentPath = Astro.url.pathname;
 const navItems = [
-  { href: "/admin/posts", labelKey: "admin.nav.posts" },
-  { href: "/admin/media", labelKey: "admin.nav.media" },
-  { href: "/admin/settings", labelKey: "admin.nav.settings" },
+  { href: "/admin/posts", labelKey: "admin.nav.posts", fallbackLabel: "Posts" },
+  { href: "/admin/media", labelKey: "admin.nav.media", fallbackLabel: "Media" },
+  { href: "/admin/settings", labelKey: "admin.nav.settings", fallbackLabel: "Settings" },
 ];
 ---
 
@@ -72,7 +72,7 @@ const navItems = [
                         active ? "bg-accent/10 font-semibold text-accent" : "hover:bg-muted"
                       }`}
                     >
-                      {item.href}
+                      {item.fallbackLabel}
                     </a>
                   </li>
                 );
