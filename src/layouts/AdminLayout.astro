@@ -7,6 +7,12 @@ export interface Props {
 }
 
 const { title } = Astro.props;
+const currentPath = Astro.url.pathname;
+const navItems = [
+  { href: "/admin/posts", labelKey: "admin.nav.posts" },
+  { href: "/admin/media", labelKey: "admin.nav.media" },
+  { href: "/admin/settings", labelKey: "admin.nav.settings" },
+];
 ---
 
 <!doctype html>
@@ -55,7 +61,22 @@ const { title } = Astro.props;
           <!-- Navigation -->
           <nav class="flex-1 overflow-y-auto px-4 py-4">
             <ul class="space-y-1" id="admin-nav">
-              <!-- Nav items will be populated by client-side JS -->
+              {navItems.map((item) => {
+                const active = currentPath === item.href || currentPath.startsWith(`${item.href}/`);
+                return (
+                  <li>
+                    <a
+                      href={item.href}
+                      data-i18n={item.labelKey}
+                      class={`block rounded-lg px-3 py-2 text-sm transition-colors ${
+                        active ? "bg-accent/10 font-semibold text-accent" : "hover:bg-muted"
+                      }`}
+                    >
+                      {item.href}
+                    </a>
+                  </li>
+                );
+              })}
             </ul>
           </nav>
 
@@ -112,7 +133,7 @@ const { title } = Astro.props;
       <main class="flex flex-1 flex-col overflow-hidden">
         <!-- Top Header -->
         <header class="flex h-16 items-center justify-between border-b border-border bg-surface px-6">
-          <h1 class="text-xl font-semibold" data-i18n="admin.pageTitle">{title}</h1>
+          <h1 class="text-xl font-semibold">{title}</h1>
           <div class="flex items-center gap-4">
             <a
               href="/"

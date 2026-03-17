@@ -1,22 +1,6 @@
 ---
 import Layout from "@/layouts/AdminLayout.astro";
-import { getCollection } from "astro:content";
-import { Plus, Search, Edit, Eye, Trash2 } from "lucide-react";
-
-// Get all posts
-const posts = await getCollection("blog");
-const sortedPosts = posts.sort(
-  (a, b) => b.data.pubDatetime.valueOf() - a.data.pubDatetime.valueOf()
-);
-
-// Format date
-const formatDate = (date: Date) => {
-  return new Intl.DateTimeFormat("zh-CN", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(date);
-};
+import { Plus, Search } from "lucide-react";
 ---
 
 <Layout title="Posts">
@@ -67,72 +51,9 @@ const formatDate = (date: Date) => {
         </tr>
       </thead>
       <tbody class="divide-y divide-border">
-        {sortedPosts.map((post) => (
-          <tr key={post.id} class="post-row hover:bg-muted/30" data-status={post.data.draft ? "draft" : "published"} data-title={post.data.title.toLowerCase()}>
-            <td class="px-6 py-4">
-              <a
-                href={`/blog/${post.slug}/`}
-                target="_blank"
-                class="font-medium hover:text-accent"
-              >
-                {post.data.title}
-              </a>
-            </td>
-            <td class="px-6 py-4">
-              <span
-                class={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                  post.data.draft
-                    ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-                    : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                }`}
-              >
-                {post.data.draft ? "Draft" : "Published"}
-              </span>
-            </td>
-            <td class="px-6 py-4">
-              <div class="flex flex-wrap gap-1">
-                {post.data.tags?.map((tag) => (
-                  <span
-                    key={tag}
-                    class="rounded bg-muted px-2 py-0.5 text-xs"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </td>
-            <td class="px-6 py-4 text-sm text-foreground/60">
-              {formatDate(post.data.pubDatetime)}
-            </td>
-            <td class="px-6 py-4 text-right">
-              <div class="flex justify-end gap-2">
-                <a
-                  href={`/admin/posts/${post.slug}`}
-                  class="rounded p-1 hover:bg-muted"
-                  title="Edit"
-                >
-                  <Edit className="h-4 w-4" />
-                </a>
-                <a
-                  href={`/blog/${post.slug}/`}
-                  target="_blank"
-                  class="rounded p-1 hover:bg-muted"
-                  title="View"
-                >
-                  <Eye className="h-4 w-4" />
-                </a>
-                <button
-                  class="rounded p-1 hover:bg-muted text-red-500"
-                  title="Delete"
-                  data-post-id={post.slug}
-                  onclick="deletePost(this)"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            </td>
-          </tr>
-        ))}
+        <tr id="posts-empty-row">
+          <td class="px-6 py-6 text-sm text-foreground/60" colspan="5">No posts yet</td>
+        </tr>
       </tbody>
     </table>
   </div>
@@ -196,22 +117,23 @@ const formatDate = (date: Date) => {
       return row;
     };
 
-    const mergeApiPosts = async () => {
+    const loadApiPosts = async () => {
       if (!tableBody) return;
       try {
         const response = await fetch('/api/admin/posts');
         if (!response.ok) return;
         const payload = await response.json();
         const posts = Array.isArray(payload.posts) ? payload.posts : [];
-        const existing = new Set(getRows().map(row => row.getAttribute('data-title')));
-
-        posts.forEach(post => {
-          const key = String(post.title || '').toLowerCase();
-          if (existing.has(key)) return;
-          tableBody.prepend(buildApiRow(post));
-        });
+        tableBody.innerHTML = '';
+        if (posts.length === 0) {
+          tableBody.innerHTML = '<tr id="posts-empty-row"><td class="px-6 py-6 text-sm text-foreground/60" colspan="5">No posts yet</td></tr>';
+          return;
+        }
+        posts.forEach(post => tableBody.append(buildApiRow(post)));
       } catch {
-        // keep SSR list
+        if (tableBody && !tableBody.querySelector('tr')) {
+          tableBody.innerHTML = '<tr id="posts-empty-row"><td class="px-6 py-6 text-sm text-foreground/60" colspan="5">Failed to load posts</td></tr>';
+        }
       }
     };
 
@@ -243,6 +165,6 @@ const formatDate = (date: Date) => {
       }
     }
 
-    void mergeApiPosts();
+    void loadApiPosts();
   </script>
 </Layout>

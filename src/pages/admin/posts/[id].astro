@@ -1,18 +1,13 @@
 ---
 import Layout from "@/layouts/AdminLayout.astro";
-import { getCollection } from "astro:content";
 
 const { id } = Astro.params;
 
-// Get post data
-const posts = await getCollection("blog");
-const post = posts.find(p => p.slug === id);
-
-const title = post?.data.title ?? "";
-const description = post?.data.description ?? "";
-const tags = post?.data.tags ?? [];
-const draft = post?.data.draft ?? true;
-const content = post?.body ?? "";
+const title = "";
+const description = "";
+const tags: string[] = [];
+const draft = true;
+const content = "";
 ---
 
 <Layout title={`Edit: ${title}`}>
