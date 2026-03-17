@@ -1,6 +1,5 @@
 ---
 import Layout from "@/layouts/AdminLayout.astro";
-import { Plus, Search } from "lucide-react";
 ---
 
 <Layout title="Posts">
@@ -11,7 +10,7 @@ import { Plus, Search } from "lucide-react";
       href="/admin/posts/new"
       class="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90"
     >
-      <Plus className="h-4 w-4" />
+      <span aria-hidden="true">+</span>
       <span data-i18n="admin.newPost">New Post</span>
     </a>
   </div>
@@ -19,7 +18,7 @@ import { Plus, Search } from "lucide-react";
   <!-- Filters -->
   <div class="mb-6 flex flex-col gap-4 sm:flex-row">
     <div class="relative flex-1">
-      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40" />
+      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40" aria-hidden="true">🔍</span>
       <input
         type="text"
         id="post-search"

@@ -1,6 +1,5 @@
 ---
 import Layout from "@/layouts/AdminLayout.astro";
-import { Image, Upload, Copy, Trash2 } from "lucide-react";
 ---
 
 <Layout title="Media Library">
@@ -9,7 +8,7 @@ import { Image, Upload, Copy, Trash2 } from "lucide-react";
     <h1 class="text-2xl font-semibold" data-i18n="admin.mediaLibrary">Media Library</h1>
     
     <label class="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90">
-      <Upload className="h-4 w-4" />
+      <span aria-hidden="true">⬆</span>
       <span data-i18n="admin.upload">Upload</span>
       <input type="file" class="hidden" accept="image/*" multiple id="media-upload" />
     </label>
@@ -20,7 +19,7 @@ import { Image, Upload, Copy, Trash2 } from "lucide-react";
     id="drop-zone"
     class="mb-8 rounded-xl border-2 border-dashed border-border bg-muted/30 p-12 text-center transition-colors hover:border-accent hover:bg-muted/50"
   >
-    <Image className="mx-auto h-12 w-12 text-foreground/40" />
+    <div class="mx-auto text-4xl text-foreground/40" aria-hidden="true">🖼️</div>
     <p class="mt-4 text-lg font-medium" data-i18n="admin.dropFiles">Drop files here</p>
     <p class="mt-2 text-sm text-foreground/60" data-i18n="admin.orClickUpload">or click to upload</p>
     <input type="file" class="hidden" accept="image/*" multiple id="drop-upload" />
@@ -30,7 +29,7 @@ import { Image, Upload, Copy, Trash2 } from "lucide-react";
   <div id="media-grid" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
     <!-- Media items will be loaded here -->
     <div class="col-span-full py-12 text-center text-foreground/60">
-      <Image className="mx-auto h-16 w-16 opacity-20" />
+      <div class="mx-auto text-5xl opacity-20" aria-hidden="true">🖼️</div>
       <p class="mt-4" data-i18n="admin.noMedia">No media files yet</p>
       <p class="text-sm" data-i18n="admin.uploadFirst">Upload your first image</p>
     </div>
