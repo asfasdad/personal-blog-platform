@@ -1,29 +1,58 @@
 ---
-import { getCollection } from "astro:content";
-import type { GetStaticPaths } from "astro";
-import type { CollectionEntry } from "astro:content";
-import PostDetails from "@/layouts/PostDetails.astro";
-import getSortedPosts from "@/utils/getSortedPosts";
-import { getPath } from "@/utils/getPath";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import { SITE } from "@/config";
+import { listPosts } from "@/lib/admin-store";
 
-export const prerender = process.env.E2E_PRERENDER === "1" || process.env.LIGHTHOUSE_STATIC === "1";
+export const prerender = false;
 
-export const getStaticPaths = (async () => {
-  const posts = await getCollection("blog");
-  const sortedPosts = getSortedPosts(posts);
+const requestedSlug = Astro.params.slug ?? "";
+const adminPosts = requestedSlug ? await listPosts(Astro.locals) : [];
+const runtimePost = adminPosts.find(item => item.slug === requestedSlug && !item.draft);
 
-  return sortedPosts.map(post => ({
-    params: { slug: getPath(post.id, post.filePath, false) },
-    props: { post, posts: sortedPosts },
-  }));
-}) satisfies GetStaticPaths;
-
-interface Props {
-  post: CollectionEntry<"blog">;
-  posts: CollectionEntry<"blog">[];
+if (!runtimePost) {
+  Astro.response.status = 404;
 }
-
-const { post, posts } = Astro.props;
 ---
 
-<PostDetails {post} {posts} />
+{
+  runtimePost ? (
+    <Layout title={`${runtimePost.title} | ${SITE.title}`}>
+      <Header />
+      <main id="main-content" class="app-layout pb-12">
+        <h1 class="inline-block text-2xl font-bold text-accent sm:text-3xl">{runtimePost.title}</h1>
+        <div class="my-2 text-sm text-foreground/70">{new Date(runtimePost.pubDatetime).toLocaleDateString("zh-CN")}</div>
+        {
+          runtimePost.description ? (
+            <p class="mt-4 text-foreground/85">{runtimePost.description}</p>
+          ) : null
+        }
+        {
+          runtimePost.tags.length > 0 ? (
+            <ul class="mt-4 mb-8 flex flex-wrap gap-2">
+              {runtimePost.tags.map(tag => (
+                <li class="rounded-full border border-border px-2 py-0.5 text-xs text-foreground/80">{tag}</li>
+              ))}
+            </ul>
+          ) : null
+        }
+        <article class="app-prose w-full max-w-app">
+          <div class="whitespace-pre-wrap">{runtimePost.content}</div>
+        </article>
+      </main>
+      <Footer />
+    </Layout>
+  ) : (
+    <Layout title={`404 Not Found | ${SITE.title}`}>
+      <Header />
+      <main id="main-content" class="app-layout">
+        <div class="flex flex-col items-center justify-center py-20">
+          <h1 class="mb-4 text-6xl font-bold text-accent">404</h1>
+          <p class="text-xl">Page not found</p>
+        </div>
+      </main>
+      <Footer />
+    </Layout>
+  )
+}
