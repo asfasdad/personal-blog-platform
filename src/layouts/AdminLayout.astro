@@ -177,7 +177,9 @@ const navItems = [
         overlay?.classList.add("hidden");
       });
     </script>
-    <script src="../scripts/theme.ts"></script>
-    <script src="../scripts/i18n.ts"></script>
+    <script type="module">
+      import "../scripts/theme.ts";
+      import "../scripts/i18n.ts";
+    </script>
   </body>
 </html>
