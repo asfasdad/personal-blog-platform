@@ -158,6 +158,8 @@ import Layout from "@/layouts/AdminLayout.astro";
     const form = document.getElementById('new-post-form');
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const submitter = e.submitter;
+      const actionValue = submitter instanceof HTMLButtonElement ? submitter.value : 'publish';
       
       const formData = new FormData(form);
       const data = {
@@ -166,7 +168,7 @@ import Layout from "@/layouts/AdminLayout.astro";
         description: formData.get('description'),
         tags: formData.get('tags')?.toString().split(',').map(t => t.trim()).filter(Boolean),
         content: formData.get('content'),
-        action: formData.get('action'),
+        action: actionValue,
       };
 
       try {

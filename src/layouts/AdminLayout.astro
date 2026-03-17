@@ -1,6 +1,8 @@
 ---
 import { SITE } from "@/config";
 import "@/styles/global.css";
+import themeScriptUrl from "@/scripts/theme.ts?url";
+import i18nScriptUrl from "@/scripts/i18n.ts?url";
 
 export interface Props {
   title: string;
@@ -177,9 +179,7 @@ const navItems = [
         overlay?.classList.add("hidden");
       });
     </script>
-    <script type="module">
-      import "../scripts/theme.ts";
-      import "../scripts/i18n.ts";
-    </script>
+    <script type="module" src={themeScriptUrl}></script>
+    <script type="module" src={i18nScriptUrl}></script>
   </body>
 </html>
