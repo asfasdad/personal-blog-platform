@@ -124,7 +124,7 @@ const formatDate = (date: Date) => {
                 <button
                   class="rounded p-1 hover:bg-muted text-red-500"
                   title="Delete"
-                  data-post-id={post.id}
+                  data-post-id={post.slug}
                   onclick="deletePost(this)"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -141,13 +141,14 @@ const formatDate = (date: Date) => {
     // Search functionality
     const searchInput = document.getElementById('post-search');
     const statusFilter = document.getElementById('status-filter');
-    const rows = document.querySelectorAll('.post-row');
+    const getRows = () => Array.from(document.querySelectorAll('.post-row'));
+    const tableBody = document.querySelector('#posts-table tbody');
 
     function filterPosts() {
       const searchTerm = searchInput?.value.toLowerCase() || '';
       const status = statusFilter?.value || 'all';
 
-      rows.forEach(row => {
+      getRows().forEach(row => {
         const title = row.getAttribute('data-title') || '';
         const postStatus = row.getAttribute('data-status') || '';
         
@@ -162,16 +163,86 @@ const formatDate = (date: Date) => {
       });
     }
 
+    const formatDate = (iso) => {
+      try {
+        return new Intl.DateTimeFormat('zh-CN', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        }).format(new Date(iso));
+      } catch {
+        return iso;
+      }
+    };
+
+    const buildApiRow = (post) => {
+      const row = document.createElement('tr');
+      row.className = 'post-row hover:bg-muted/30';
+      row.dataset.status = post.draft ? 'draft' : 'published';
+      row.dataset.title = String(post.title || '').toLowerCase();
+      row.innerHTML = `
+        <td class="px-6 py-4"><a href="/blog/${post.slug}/" target="_blank" class="font-medium hover:text-accent">${post.title}</a></td>
+        <td class="px-6 py-4"><span class="inline-flex rounded-full px-2 py-1 text-xs font-medium ${post.draft ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}">${post.draft ? 'Draft' : 'Published'}</span></td>
+        <td class="px-6 py-4"><div class="flex flex-wrap gap-1">${Array.isArray(post.tags) ? post.tags.map(tag => `<span class="rounded bg-muted px-2 py-0.5 text-xs">${tag}</span>`).join('') : ''}</div></td>
+        <td class="px-6 py-4 text-sm text-foreground/60">${formatDate(post.pubDatetime || post.updatedAt)}</td>
+        <td class="px-6 py-4 text-right">
+          <div class="flex justify-end gap-2">
+            <a href="/admin/posts/${post.slug}" class="rounded p-1 hover:bg-muted" title="Edit">✏️</a>
+            <a href="/blog/${post.slug}/" target="_blank" class="rounded p-1 hover:bg-muted" title="View">👁️</a>
+            <button class="rounded p-1 hover:bg-muted text-red-500" title="Delete" data-post-id="${post.id || post.slug}" onclick="deletePost(this)">🗑️</button>
+          </div>
+        </td>
+      `;
+      return row;
+    };
+
+    const mergeApiPosts = async () => {
+      if (!tableBody) return;
+      try {
+        const response = await fetch('/api/admin/posts');
+        if (!response.ok) return;
+        const payload = await response.json();
+        const posts = Array.isArray(payload.posts) ? payload.posts : [];
+        const existing = new Set(getRows().map(row => row.getAttribute('data-title')));
+
+        posts.forEach(post => {
+          const key = String(post.title || '').toLowerCase();
+          if (existing.has(key)) return;
+          tableBody.prepend(buildApiRow(post));
+        });
+      } catch {
+        // keep SSR list
+      }
+    };
+
     searchInput?.addEventListener('input', filterPosts);
     statusFilter?.addEventListener('change', filterPosts);
 
     // Delete post
-    async function deletePost(button) {
+    window.deletePost = async function deletePost(button) {
       if (!confirm('Are you sure you want to delete this post?')) return;
       
       const postId = button.getAttribute('data-post-id');
-      // TODO: Implement delete API call
-      alert('Delete functionality coming soon!');
+      if (!postId) return;
+
+      try {
+        const response = await fetch(`/api/admin/posts/${encodeURIComponent(postId)}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          const error = await response.text();
+          alert('Delete failed: ' + error);
+          return;
+        }
+
+        const row = button.closest('tr');
+        row?.remove();
+      } catch (err) {
+        alert('Delete failed: ' + err);
+      }
     }
+
+    void mergeApiPosts();
   </script>
 </Layout>

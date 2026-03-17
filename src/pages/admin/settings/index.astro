@@ -155,11 +155,45 @@ import { SITE } from "@/config";
   <script>
     const form = document.getElementById('settings-form');
 
+    const toBoolean = (value) => value === true || value === 'true' || value === 'on' || value === 1;
+
+    const loadSettings = async () => {
+      if (!(form instanceof HTMLFormElement)) return;
+      try {
+        const response = await fetch('/api/admin/settings');
+        if (!response.ok) return;
+        const payload = await response.json();
+        const settings = payload?.settings;
+        if (!settings) return;
+
+        for (const [key, value] of Object.entries(settings)) {
+          const field = form.elements.namedItem(key);
+          if (!field) continue;
+
+          if (field instanceof HTMLInputElement && field.type === 'checkbox') {
+            field.checked = toBoolean(value);
+          } else if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
+            field.value = value == null ? '' : String(value);
+          }
+        }
+      } catch {
+        // keep defaults
+      }
+    };
+
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
       
       const formData = new FormData(form);
-      const data = Object.fromEntries(formData);
+      const data = Object.fromEntries(formData.entries());
+
+      const checkboxNames = ['enableComments', 'enableRss', 'enableSearch', 'enableNewsletter'];
+      for (const key of checkboxNames) {
+        const element = form.elements.namedItem(key);
+        if (element instanceof HTMLInputElement) {
+          data[key] = element.checked;
+        }
+      }
 
       try {
         const response = await fetch('/api/admin/settings', {
@@ -178,5 +212,7 @@ import { SITE } from "@/config";
         alert('Error: ' + err);
       }
     });
+
+    void loadSettings();
   </script>
 </Layout>

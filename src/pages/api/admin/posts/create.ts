@@ -1,6 +1,9 @@
 import type { APIRoute } from "astro";
+import { createPost } from "@/lib/admin-store";
 
-export const POST: APIRoute = async ({ request }) => {
+export const prerender = false;
+
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
     const data = await request.json();
     const { title, slug, description, tags, content, action } = data;
@@ -17,31 +20,24 @@ export const POST: APIRoute = async ({ request }) => {
       .replace(/\s+/g, "-")
       .substring(0, 50);
 
-    // Create post data
-    const postData = {
-      title,
-      description: description || "",
-      pubDatetime: new Date().toISOString(),
-      draft: action === "draft",
-      tags: tags || [],
-    };
+    const normalizedTags = Array.isArray(tags)
+      ? tags.map((tag: unknown) => String(tag).trim()).filter(Boolean)
+      : [];
 
-    // In a real implementation, you would:
-    // 1. Save to database (Cloudflare D1)
-    // 2. Or use GitHub API to commit the file
-    // 3. Or store in KV and trigger a rebuild
-
-    // For now, return success (implement actual storage later)
-    console.log("Creating post:", {
+    const created = await createPost(locals, {
       slug: finalSlug,
-      ...postData,
-      contentLength: content.length,
+      title: String(title),
+      description: String(description ?? ""),
+      tags: normalizedTags,
+      content: String(content),
+      draft: action === "draft",
     });
 
     return new Response(
       JSON.stringify({
         success: true,
-        slug: finalSlug,
+        slug: created.slug,
+        id: created.id,
         message: "Post created successfully",
       }),
       {

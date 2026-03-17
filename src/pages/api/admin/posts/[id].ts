@@ -1,7 +1,36 @@
 import type { APIRoute } from "astro";
+import { deletePost, getPost, updatePost } from "@/lib/admin-store";
 
-export const PUT: APIRoute = async ({ request, params }) => {
+export const prerender = false;
+
+export const GET: APIRoute = async ({ params, locals }) => {
+  const id = params.id;
+  if (!id) {
+    return new Response(JSON.stringify({ error: "Post id is required" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const post = await getPost(locals, id);
+  if (!post) {
+    return new Response(JSON.stringify({ error: "Post not found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  return new Response(JSON.stringify({ post }), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
+};
+
+export const PUT: APIRoute = async ({ request, params, locals }) => {
   const { id } = params;
+  if (!id) {
+    return new Response("Post id is required", { status: 400 });
+  }
   
   try {
     const data = await request.json();
@@ -12,30 +41,30 @@ export const PUT: APIRoute = async ({ request, params }) => {
       return new Response("Title and content are required", { status: 400 });
     }
 
-    // Create post data
-    const postData = {
-      title,
-      description: description || "",
-      tags: tags || [],
-      draft,
-    };
+    const normalizedTags = Array.isArray(tags)
+      ? tags.map((tag: unknown) => String(tag).trim()).filter(Boolean)
+      : [];
 
-    // In a real implementation, you would:
-    // 1. Update in database (Cloudflare D1)
-    // 2. Or use GitHub API to update the file
-    // 3. Or update in KV and trigger a rebuild
-
-    // For now, return success (implement actual storage later)
-    console.log("Updating post:", {
-      slug: id,
-      ...postData,
-      contentLength: content.length,
+    const updated = await updatePost(locals, id, {
+      title: String(title),
+      description: String(description ?? ""),
+      tags: normalizedTags,
+      content: String(content),
+      draft: Boolean(draft),
     });
+
+    if (!updated) {
+      return new Response(JSON.stringify({ error: "Post not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
-        slug: id,
+        slug: updated.slug,
+        id: updated.id,
         message: "Post updated successfully",
       }),
       {
@@ -52,15 +81,23 @@ export const PUT: APIRoute = async ({ request, params }) => {
   }
 };
 
-export const DELETE: APIRoute = async ({ params }) => {
+export const DELETE: APIRoute = async ({ params, locals }) => {
   const { id } = params;
+  if (!id) {
+    return new Response(JSON.stringify({ error: "Post id is required" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
   
   try {
-    // In a real implementation, you would:
-    // 1. Delete from database (Cloudflare D1)
-    // 2. Or use GitHub API to delete the file
-
-    console.log("Deleting post:", id);
+    const removed = await deletePost(locals, id);
+    if (!removed) {
+      return new Response(JSON.stringify({ error: "Post not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
     return new Response(
       JSON.stringify({
@@ -79,4 +116,8 @@ export const DELETE: APIRoute = async ({ params }) => {
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
+};
+
+export const POST: APIRoute = async (context) => {
+  return DELETE(context);
 };

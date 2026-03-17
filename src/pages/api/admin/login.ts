@@ -1,11 +1,10 @@
 import type { APIRoute } from "astro";
+import { isAdminKeyValid, resolveAdminKey } from "@/lib/admin-auth";
 
 export const prerender = false;
 
-const getAdminKey = () => process.env.ADMIN_ACCESS_KEY ?? "local-admin-key";
-
-export const POST: APIRoute = async ({ request, cookies, redirect }) => {
-  const configuredKey = getAdminKey();
+export const POST: APIRoute = async ({ request, cookies, redirect, locals }) => {
+  const configuredKey = resolveAdminKey(locals);
 
   let key = "";
   const contentType = request.headers.get("content-type") ?? "";
@@ -20,7 +19,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     key = String(formData.get("key") ?? "");
   }
 
-  if (key !== configuredKey) {
+  if (!isAdminKeyValid(key, locals)) {
     return redirect("/admin/login?error=invalid");
   }
 

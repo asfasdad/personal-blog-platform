@@ -42,8 +42,124 @@ import { Image, Upload, Copy, Trash2 } from "lucide-react";
     const mediaUpload = document.getElementById('media-upload');
     const mediaGrid = document.getElementById('media-grid');
 
-    // Handle drag and drop
-    dropZone?.addEventListener('dragover', (e) => {
+    const renderEmpty = () => {
+      if (!mediaGrid) return;
+      mediaGrid.innerHTML = `
+        <div class="col-span-full py-12 text-center text-foreground/60">
+          <p class="mt-4">No media files yet</p>
+          <p class="text-sm">Upload your first image</p>
+        </div>
+      `;
+    };
+
+    const renderMediaItem = (item) => {
+      const card = document.createElement('div');
+      card.className = 'group relative overflow-hidden rounded-xl border border-border bg-surface';
+      card.dataset.id = item.id;
+      card.innerHTML = `
+        <img src="${item.url}" alt="${item.name}" class="aspect-square w-full object-cover" />
+        <div class="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+          <button class="copy-btn rounded-lg bg-white px-3 py-1 text-xs hover:bg-gray-100" type="button">Copy URL</button>
+          <button class="delete-btn rounded-lg bg-white px-3 py-1 text-xs text-red-500 hover:bg-gray-100" type="button">Delete</button>
+        </div>
+        <div class="border-t border-border p-2">
+          <p class="truncate text-xs text-foreground/60">${item.name}</p>
+        </div>
+      `;
+
+      const copyBtn = card.querySelector('.copy-btn');
+      const deleteBtn = card.querySelector('.delete-btn');
+
+      copyBtn?.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(item.url);
+          alert('URL copied to clipboard');
+        } catch {
+          alert('Failed to copy URL');
+        }
+      });
+
+      deleteBtn?.addEventListener('click', async () => {
+        if (!confirm('Delete this image?')) return;
+        const response = await fetch(`/api/admin/media/${encodeURIComponent(item.id)}`, { method: 'DELETE' });
+        if (!response.ok) {
+          alert('Delete failed');
+          return;
+        }
+        card.remove();
+        if (mediaGrid && mediaGrid.children.length === 0) {
+          renderEmpty();
+        }
+      });
+
+      mediaGrid?.appendChild(card);
+    };
+
+    const loadMedia = async () => {
+      if (!mediaGrid) return;
+      const response = await fetch('/api/admin/media');
+      if (!response.ok) {
+        renderEmpty();
+        return;
+      }
+      const payload = await response.json();
+      const items = Array.isArray(payload.media) ? payload.media : [];
+      mediaGrid.innerHTML = '';
+      if (items.length === 0) {
+        renderEmpty();
+        return;
+      }
+      items.forEach(renderMediaItem);
+    };
+
+    const uploadFile = async (file) => {
+      if (!file.type.startsWith('image/')) {
+        return;
+      }
+
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      if (typeof dataUrl !== 'string') {
+        return;
+      }
+
+      const response = await fetch('/api/admin/media', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: file.name,
+          url: dataUrl,
+          mimeType: file.type,
+          size: file.size,
+        }),
+      });
+
+      if (!response.ok) {
+        alert('Upload failed');
+        return;
+      }
+
+      const payload = await response.json();
+      if (payload.media && mediaGrid?.querySelector('.col-span-full')) {
+        mediaGrid.innerHTML = '';
+      }
+      if (payload.media) {
+        renderMediaItem(payload.media);
+      }
+    };
+
+    const handleFiles = async (files) => {
+      for (const file of files) {
+        await uploadFile(file);
+      }
+    };
+
+    dropZone?.addEventListener('dragover', e => {
       e.preventDefault();
       dropZone.classList.add('border-accent', 'bg-muted/50');
     });
@@ -52,13 +168,12 @@ import { Image, Upload, Copy, Trash2 } from "lucide-react";
       dropZone.classList.remove('border-accent', 'bg-muted/50');
     });
 
-    dropZone?.addEventListener('drop', (e) => {
+    dropZone?.addEventListener('drop', e => {
       e.preventDefault();
       dropZone.classList.remove('border-accent', 'bg-muted/50');
-      
       const files = e.dataTransfer?.files;
       if (files) {
-        handleFiles(files);
+        void handleFiles(files);
       }
     });
 
@@ -66,97 +181,20 @@ import { Image, Upload, Copy, Trash2 } from "lucide-react";
       dropUpload?.click();
     });
 
-    dropUpload?.addEventListener('change', (e) => {
+    dropUpload?.addEventListener('change', e => {
       const target = e.target;
       if (target instanceof HTMLInputElement && target.files) {
-        handleFiles(target.files);
+        void handleFiles(target.files);
       }
     });
 
-    mediaUpload?.addEventListener('change', (e) => {
+    mediaUpload?.addEventListener('change', e => {
       const target = e.target;
       if (target instanceof HTMLInputElement && target.files) {
-        handleFiles(target.files);
+        void handleFiles(target.files);
       }
     });
 
-    async function handleFiles(files: FileList) {
-      for (const file of files) {
-        if (!file.type.startsWith('image/')) {
-          alert(`Skipping ${file.name}: Not an image file`);
-          continue;
-        }
-
-        // Show upload progress (simplified)
-        console.log(`Uploading ${file.name}...`);
-
-        // In a real implementation, you would:
-        // 1. Upload to Cloudflare R2 or Images API
-        // 2. Get the URL back
-        // 3. Add to the media grid
-
-        // For now, create a local preview
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const result = e.target?.result;
-          if (typeof result === 'string') {
-            addMediaItem(result, file.name);
-          }
-        };
-        reader.readAsDataURL(file);
-      }
-    }
-
-    function addMediaItem(url: string, name: string) {
-      const emptyState = mediaGrid?.querySelector('.col-span-full');
-      if (emptyState) {
-        emptyState.remove();
-      }
-
-      const item = document.createElement('div');
-      item.className = 'group relative rounded-xl border border-border bg-surface overflow-hidden';
-      item.innerHTML = `
-        <img src="${url}" alt="${name}" class="aspect-square w-full object-cover" />
-        <div class="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-          <button class="rounded-lg bg-white p-2 hover:bg-gray-100" title="Copy URL" onclick="copyUrl('${url}')">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-          </button>
-          <button class="rounded-lg bg-white p-2 hover:bg-gray-100 text-red-500" title="Delete" onclick="deleteMedia(this)">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-          </button>
-        </div>
-        <div class="border-t border-border p-2">
-          <p class="truncate text-xs text-foreground/60">${name}</p>
-        </div>
-      `;
-
-      mediaGrid?.appendChild(item);
-    }
-
-    // Copy URL function
-    (window as any).copyUrl = function(url: string) {
-      navigator.clipboard.writeText(url).then(() => {
-        alert('URL copied to clipboard!');
-      });
-    };
-
-    // Delete media function
-    (window as any).deleteMedia = function(button: HTMLButtonElement) {
-      if (!confirm('Are you sure you want to delete this image?')) return;
-      
-      const item = button.closest('.group');
-      item?.remove();
-
-      // Check if empty
-      if (mediaGrid?.children.length === 0) {
-        mediaGrid.innerHTML = `
-          <div class="col-span-full py-12 text-center text-foreground/60">
-            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto opacity-20"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-            <p class="mt-4">No media files yet</p>
-            <p class="text-sm">Upload your first image</p>
-          </div>
-        `;
-      }
-    };
+    void loadMedia();
   </script>
 </Layout>

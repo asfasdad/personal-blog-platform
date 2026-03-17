@@ -1,6 +1,4 @@
 ---
-import Header from "@/components/Header.astro";
-import Footer from "@/components/Footer.astro";
 import { SITE } from "@/config";
 
 export interface Props {
@@ -8,12 +6,6 @@ export interface Props {
 }
 
 const { title } = Astro.props;
-
-// Check if user is logged in
-const adminAccess = Astro.cookies.get("admin_access")?.value;
-if (!adminAccess && Astro.url.pathname !== "/admin/login") {
-  return Astro.redirect("/admin/login");
-}
 ---
 
 <!doctype html>

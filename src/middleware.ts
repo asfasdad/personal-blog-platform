@@ -1,6 +1,5 @@
 import type { MiddlewareHandler } from "astro";
-
-const getConfiguredAdminKey = () => process.env.ADMIN_ACCESS_KEY ?? "local-admin-key";
+import { isAdminKeyValid } from "@/lib/admin-auth";
 
 export const onRequest: MiddlewareHandler = async (context, next) => {
   const pathname = context.url.pathname;
@@ -17,10 +16,9 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     return next();
   }
 
-  const configuredKey = getConfiguredAdminKey();
   const cookieKey = context.cookies.get("admin_access")?.value;
   const headerKey = context.request.headers.get("x-admin-access-key");
-  const isAuthorized = cookieKey === configuredKey || headerKey === configuredKey;
+  const isAuthorized = isAdminKeyValid(cookieKey ?? "", context.locals) || isAdminKeyValid(headerKey ?? "", context.locals);
 
   if (isAuthorized) {
     return next();
