@@ -128,3 +128,43 @@ test('admin modules work end-to-end', async ({ request }) => {
   const deletedPostResponse = await request.get(`/api/admin/posts/${postId}`, { headers });
   expect(deletedPostResponse.status()).toBe(404);
 });
+
+test('admin frontend works: nav, language switch, and publish flow', async ({ page }) => {
+  const uniqueSuffix = `${Date.now()}`;
+  const postTitle = `UI Publish Post ${uniqueSuffix}`;
+
+  page.on('dialog', async dialog => {
+    await dialog.accept();
+  });
+
+  await loginAsAdmin(page);
+  await expect(page).toHaveURL(/\/admin/);
+
+  await page.goto('/admin/posts');
+  await expect(page.getByRole('link', { name: /Posts/i })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Media/i })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Settings/i })).toBeVisible();
+
+  await page.click('a[href="/admin/media"]');
+  await expect(page).toHaveURL(/\/admin\/media/);
+
+  await page.click('a[href="/admin/settings"]');
+  await expect(page).toHaveURL(/\/admin\/settings/);
+
+  await page.click('a[href="/admin/posts"]');
+  await expect(page).toHaveURL(/\/admin\/posts/);
+
+  await page.click('a[href="/admin/posts/new"]');
+  await expect(page).toHaveURL(/\/admin\/posts\/new/);
+
+  await page.click('button[data-lang-switch="zh"]');
+  await expect(page.locator('[data-i18n="admin.postTitle"]')).toContainText('文章标题');
+  await expect(page.locator('[data-i18n="admin.postContent"]')).toContainText('正文');
+
+  await page.fill('#post-title', postTitle);
+  await page.fill('#post-content', '# UI publish test\n\nCreated by Playwright.');
+  await page.click('button[value="publish"]');
+
+  await expect(page).toHaveURL(/\/admin\/posts/);
+  await expect(page.locator('#posts-table')).toContainText(postTitle);
+});
