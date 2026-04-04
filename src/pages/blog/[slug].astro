@@ -17,7 +17,7 @@ import { SITE } from "@/config";
 import { slugifyStr } from "@/utils/slugify";
 import { marked } from "marked";
 
-export const prerender = process.env.E2E_PRERENDER === "1" || process.env.LIGHTHOUSE_STATIC === "1";
+export const prerender = false;
 
 // Generate static paths for markdown posts
 export async function getStaticPaths() {

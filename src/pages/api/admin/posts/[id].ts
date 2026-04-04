@@ -46,6 +46,13 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
       draft: draft ?? false,
     });
 
+    if (!updated) {
+      return new Response(JSON.stringify({ error: "Post not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -105,4 +112,8 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
+};
+
+export const POST: APIRoute = async (context) => {
+  return DELETE(context);
 };

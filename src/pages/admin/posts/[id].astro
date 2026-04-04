@@ -129,6 +129,31 @@ if (!postTitle) {
     const postId = form?.dataset.postId;
     const saveStatus = document.getElementById('save-status');
 
+    const loadPostFromApi = async () => {
+      if (!(form instanceof HTMLFormElement) || !postId) return;
+      try {
+        const response = await fetch(`/api/admin/posts/${encodeURIComponent(postId)}`);
+        if (!response.ok) return;
+        const payload = await response.json();
+        const post = payload?.post;
+        if (!post) return;
+
+        const titleInput = form.querySelector('#post-title');
+        const descInput = form.querySelector('#post-description');
+        const tagsInput = form.querySelector('#post-tags');
+        const statusInput = form.querySelector('#post-status');
+        const contentInput = form.querySelector('#post-content');
+
+        if (titleInput instanceof HTMLInputElement) titleInput.value = post.title ?? '';
+        if (descInput instanceof HTMLTextAreaElement) descInput.value = post.description ?? '';
+        if (tagsInput instanceof HTMLInputElement) tagsInput.value = Array.isArray(post.tags) ? post.tags.join(', ') : '';
+        if (statusInput instanceof HTMLSelectElement) statusInput.value = post.draft ? 'true' : 'false';
+        if (contentInput instanceof HTMLTextAreaElement) contentInput.value = post.content ?? '';
+      } catch {
+        // keep SSR fallback values
+      }
+    };
+
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const formData = new FormData(form);
@@ -176,5 +201,7 @@ if (!postTitle) {
         setTimeout(() => { if (saveStatus) saveStatus.textContent = ''; }, 2000);
       }, 2000);
     });
+
+    void loadPostFromApi();
   </script>
 </Layout>

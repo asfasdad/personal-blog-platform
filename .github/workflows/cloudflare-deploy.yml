@@ -21,10 +21,12 @@ permissions:
 
 jobs:
   deploy:
+    environment: production
     runs-on: ubuntu-latest
     env:
-      PAGES_PROJECT: personal-blog-platform
+      PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT || 'blog-cms' }}
       PRODUCTION_BRANCH: ${{ vars.CLOUDFLARE_PRODUCTION_BRANCH || 'main' }}
+      PRODUCTION_URL: ${{ vars.CLOUDFLARE_PRODUCTION_URL || 'https://blog.158247.xyz' }}
     outputs:
       deploy_url: ${{ steps.meta.outputs.deploy_url }}
       deploy_target: ${{ steps.meta.outputs.deploy_target }}
@@ -72,25 +74,42 @@ jobs:
             fi
           fi
 
-          DEPLOY_URL="https://${PAGES_PROJECT}.pages.dev"
-          if [ "${TARGET}" = "preview" ]; then
-            SAFE_BRANCH=$(echo "${BRANCH_NAME}" | tr '/_' '-')
-            DEPLOY_URL="https://${SAFE_BRANCH}.${PAGES_PROJECT}.pages.dev"
-          fi
+          DEPLOY_URL="${PRODUCTION_URL}"
 
           echo "deploy_target=${TARGET}" >> "$GITHUB_OUTPUT"
           echo "deploy_branch=${BRANCH_NAME}" >> "$GITHUB_OUTPUT"
           echo "deploy_url=${DEPLOY_URL}" >> "$GITHUB_OUTPUT"
 
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: >-
-            pages deploy ./dist
-            --project-name=${{ env.PAGES_PROJECT }}
-            --branch=${{ steps.meta.outputs.deploy_branch }}
+      - name: Deploy to Cloudflare Workers
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${CLOUDFLARE_API_TOKEN:-}" ]; then
+            echo "CLOUDFLARE_API_TOKEN is set"
+          else
+            echo "::error::CLOUDFLARE_API_TOKEN is missing"
+            exit 1
+          fi
+
+          if [ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
+            echo "CLOUDFLARE_ACCOUNT_ID is set"
+          else
+            echo "CLOUDFLARE_ACCOUNT_ID is not set; Wrangler will resolve account from token"
+          fi
+
+          set +e
+          pnpm dlx wrangler deploy --config dist/server/wrangler.json 2>&1 | tee deploy.log
+          DEPLOY_EXIT=${PIPESTATUS[0]}
+          set -e
+
+          if [ "$DEPLOY_EXIT" -ne 0 ]; then
+            SUMMARY=$(tail -n 120 deploy.log | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "::error::Cloudflare worker deploy failed. Tail output:%0A${SUMMARY}"
+            exit "$DEPLOY_EXIT"
+          fi
 
       - name: Wait for deployment propagation
         shell: bash

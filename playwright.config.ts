@@ -14,7 +14,7 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   webServer: {
-    command: `pnpm preview --port ${E2E_PORT} --host 127.0.0.1`,
+    command: `pnpm preview --port ${E2E_PORT} --host 127.0.0.1 --strictPort`,
     url: `http://127.0.0.1:${E2E_PORT}`,
     timeout: 120000,
     reuseExistingServer: false,

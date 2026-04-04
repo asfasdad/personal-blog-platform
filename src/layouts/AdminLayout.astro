@@ -1,5 +1,6 @@
 ---
 import { SITE } from "@/config";
+import "@/styles/global.css";
 
 export interface Props {
   title: string;
@@ -185,6 +186,97 @@ function isActive(href: string): boolean {
           el.innerHTML = icons[iconName];
         }
       });
+    </script>
+    <script is:inline>
+      (() => {
+        const dict = {
+          en: {
+            "admin.pageTitle": "Admin",
+            "admin.logout": "Logout",
+            "admin.posts": "Posts",
+            "admin.newPost": "New Post",
+            "admin.mediaLibrary": "Media Library",
+            "admin.settings": "Settings",
+            "admin.upload": "Upload",
+            "admin.noMedia": "No media files yet",
+            "admin.uploadFirst": "Upload your first image",
+            "admin.postTitle": "Post Title",
+            "admin.postSlug": "Post Slug",
+            "admin.postDescription": "Post Description",
+            "admin.postTags": "Tags",
+            "admin.postContent": "Content",
+            "admin.siteSettings": "Site Settings",
+            "admin.authorSettings": "Author Settings",
+            "admin.features": "Features",
+            "admin.integrations": "Integrations",
+            "admin.nav.posts": "Posts",
+            "admin.nav.media": "Media",
+            "admin.nav.settings": "Settings",
+          },
+          zh: {
+            "admin.pageTitle": "管理后台",
+            "admin.logout": "退出登录",
+            "admin.posts": "文章管理",
+            "admin.newPost": "新建文章",
+            "admin.mediaLibrary": "媒体库",
+            "admin.settings": "设置",
+            "admin.upload": "上传",
+            "admin.noMedia": "暂无媒体文件",
+            "admin.uploadFirst": "上传第一张图片",
+            "admin.postTitle": "文章标题",
+            "admin.postSlug": "文章别名",
+            "admin.postDescription": "文章描述",
+            "admin.postTags": "标签",
+            "admin.postContent": "正文",
+            "admin.siteSettings": "站点设置",
+            "admin.authorSettings": "作者设置",
+            "admin.features": "功能开关",
+            "admin.integrations": "第三方集成",
+            "admin.nav.posts": "文章",
+            "admin.nav.media": "媒体",
+            "admin.nav.settings": "设置",
+          },
+        };
+
+        const LANG_KEY = "site-lang";
+        const normalizeLang = (value) => (String(value || "").toLowerCase().startsWith("zh") ? "zh" : "en");
+
+        const applyLang = (lang) => {
+          document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+          document.querySelectorAll("[data-i18n]").forEach((node) => {
+            const key = node.getAttribute("data-i18n");
+            if (!key) return;
+            const text = dict[lang]?.[key] ?? dict.en[key];
+            if (text) node.textContent = text;
+          });
+          document.querySelectorAll("[data-lang-switch]").forEach((btn) => {
+            const target = normalizeLang(btn.getAttribute("data-lang-switch"));
+            btn.setAttribute("aria-pressed", target === lang ? "true" : "false");
+          });
+        };
+
+        const setLang = (lang) => {
+          localStorage.setItem(LANG_KEY, lang);
+          applyLang(lang);
+        };
+
+        const initLang = () => {
+          const saved = normalizeLang(localStorage.getItem(LANG_KEY));
+          applyLang(saved);
+          document.querySelectorAll("[data-lang-switch]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const target = normalizeLang(btn.getAttribute("data-lang-switch"));
+              setLang(target);
+            });
+          });
+        };
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", initLang, { once: true });
+        } else {
+          initLang();
+        }
+      })();
     </script>
   </body>
 </html>

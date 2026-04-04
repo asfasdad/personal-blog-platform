@@ -117,6 +117,32 @@ const enableNewsletter = savedSettings.enableNewsletter === "true";
     const form = document.getElementById('settings-form') as HTMLFormElement;
     const saveStatus = document.getElementById('save-status');
 
+    const toBoolean = (value) => value === true || value === 'true' || value === 'on' || value === 1;
+
+    const loadSettings = async () => {
+      if (!(form instanceof HTMLFormElement)) return;
+      try {
+        const response = await fetch('/api/admin/settings');
+        if (!response.ok) return;
+        const payload = await response.json();
+        const settings = payload?.settings;
+        if (!settings) return;
+
+        for (const [key, value] of Object.entries(settings)) {
+          const field = form.elements.namedItem(key);
+          if (!field) continue;
+
+          if (field instanceof HTMLInputElement && field.type === 'checkbox') {
+            field.checked = toBoolean(value);
+          } else if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
+            field.value = value == null ? '' : String(value);
+          }
+        }
+      } catch {
+        // keep defaults
+      }
+    };
+
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const formData = new FormData(form);
@@ -158,5 +184,7 @@ const enableNewsletter = savedSettings.enableNewsletter === "true";
         alert('请求失败: ' + err);
       }
     });
+
+    void loadSettings();
   </script>
 </Layout>
