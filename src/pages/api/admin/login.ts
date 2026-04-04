@@ -1,11 +1,15 @@
 import type { APIRoute } from "astro";
+import { timingSafeEqual, createSessionCookie } from "@/utils/auth";
 
 export const prerender = false;
 
-const getAdminKey = () => process.env.ADMIN_ACCESS_KEY ?? "local-admin-key";
-
-export const POST: APIRoute = async ({ request, cookies, redirect }) => {
-  const configuredKey = getAdminKey();
+export const POST: APIRoute = async ({ request, cookies, redirect, locals }) => {
+  // Try runtime env first (Cloudflare Workers), then process.env
+  const runtimeEnv = (locals as App.Locals).runtime?.env;
+  const configuredKey =
+    (runtimeEnv?.ADMIN_ACCESS_KEY as string | undefined) ??
+    process.env.ADMIN_ACCESS_KEY ??
+    "local-admin-key";
 
   let key = "";
   const contentType = request.headers.get("content-type") ?? "";
@@ -20,11 +24,14 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     key = String(formData.get("key") ?? "");
   }
 
-  if (key !== configuredKey) {
+  if (!timingSafeEqual(key, configuredKey)) {
     return redirect("/admin/login?error=invalid");
   }
 
-  cookies.set("admin_access", configuredKey, {
+  // Store a hashed session token instead of the raw key
+  const sessionToken = await createSessionCookie(configuredKey);
+
+  cookies.set("admin_access", sessionToken, {
     path: "/",
     httpOnly: true,
     sameSite: "lax",

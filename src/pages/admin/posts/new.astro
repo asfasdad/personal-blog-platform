@@ -1,164 +1,106 @@
 ---
 import Layout from "@/layouts/AdminLayout.astro";
+import MarkdownEditor from "@/components/admin/MarkdownEditor";
 ---
 
-<Layout title="New Post">
+<Layout title="新建文章">
   <div class="mx-auto max-w-4xl">
     <!-- Header -->
     <div class="mb-6 flex items-center justify-between">
-      <h1 class="text-2xl font-semibold" data-i18n="admin.newPost">New Post</h1>
-      <a
-        href="/admin/posts"
-        class="text-sm text-foreground/60 hover:text-foreground"
-      >
-        ← Back to Posts
-      </a>
+      <h1 class="text-2xl font-semibold">新建文章</h1>
+      <a href="/admin/posts" class="text-sm text-foreground/60 hover:text-foreground">← 返回文章列表</a>
     </div>
 
     <!-- Form -->
     <form id="new-post-form" class="space-y-6">
       <!-- Title -->
       <div>
-        <label class="mb-2 block text-sm font-medium" data-i18n="admin.postTitle">
-          Title *
-        </label>
-        <input
-          type="text"
-          name="title"
-          id="post-title"
-          required
+        <label class="mb-2 block text-sm font-medium">标题 *</label>
+        <input type="text" name="title" id="post-title" required
           class="w-full rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none"
-          placeholder="Enter post title..."
-        />
+          placeholder="输入文章标题..." />
       </div>
 
       <!-- Slug -->
       <div>
-        <label class="mb-2 block text-sm font-medium" data-i18n="admin.postSlug">
-          Slug
-        </label>
-        <input
-          type="text"
-          name="slug"
-          id="post-slug"
+        <label class="mb-2 block text-sm font-medium">Slug</label>
+        <input type="text" name="slug" id="post-slug"
           class="w-full rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none"
-          placeholder="auto-generated-from-title"
-        />
+          placeholder="auto-generated-from-title" />
         <p class="mt-1 text-xs text-foreground/60">URL: /blog/<span id="slug-preview">...</span>/</p>
       </div>
 
       <!-- Description -->
       <div>
-        <label class="mb-2 block text-sm font-medium" data-i18n="admin.postDescription">
-          Description
-        </label>
-        <textarea
-          name="description"
-          id="post-description"
-          rows="2"
+        <label class="mb-2 block text-sm font-medium">描述</label>
+        <textarea name="description" id="post-description" rows="2"
           class="w-full rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none"
-          placeholder="Brief description of the post..."
-        ></textarea>
+          placeholder="文章简要描述..."></textarea>
       </div>
 
       <!-- Tags -->
       <div>
-        <label class="mb-2 block text-sm font-medium" data-i18n="admin.postTags">
-          Tags
-        </label>
-        <input
-          type="text"
-          name="tags"
-          id="post-tags"
+        <label class="mb-2 block text-sm font-medium">标签</label>
+        <input type="text" name="tags" id="post-tags"
           class="w-full rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none"
-          placeholder="tag1, tag2, tag3"
-        />
+          placeholder="标签1, 标签2, 标签3" />
       </div>
 
       <!-- Content -->
       <div>
-        <label class="mb-2 block text-sm font-medium" data-i18n="admin.postContent">
-          Content *
-        </label>
-        <div id="editor-container" class="min-h-[400px] rounded-lg border border-border">
-          <textarea
-            name="content"
-            id="post-content"
-            required
-            rows="15"
-            class="w-full rounded-lg bg-background px-4 py-2 font-mono text-sm focus:border-accent focus:outline-none"
-            placeholder="Write your post content in Markdown..."
-          ></textarea>
-        </div>
-        <p class="mt-2 text-xs text-foreground/60">Supports Markdown formatting</p>
+        <label class="mb-2 block text-sm font-medium">内容 * (Markdown)</label>
+        <MarkdownEditor client:only="react" height={500} />
+        <textarea name="content" id="post-content" required rows="20"
+          class="hidden"
+          placeholder="在这里用 Markdown 写文章内容..."></textarea>
       </div>
 
       <!-- Actions -->
       <div class="flex gap-3 pt-4">
-        <button
-          type="submit"
-          name="action"
-          value="publish"
-          class="rounded-lg bg-accent px-6 py-2 font-medium text-white hover:bg-accent/90"
-        >
-          Publish
+        <button type="submit" name="action" value="publish"
+          class="rounded-lg bg-accent px-6 py-2 font-medium text-white hover:bg-accent/90">
+          发布
         </button>
-        
-        <button
-          type="submit"
-          name="action"
-          value="draft"
-          class="rounded-lg border border-border bg-surface px-6 py-2 font-medium hover:bg-muted"
-        >
-          Save Draft
+        <button type="submit" name="action" value="draft"
+          class="rounded-lg border border-border bg-surface px-6 py-2 font-medium hover:bg-muted">
+          存为草稿
         </button>
-        
-        <a
-          href="/admin/posts"
-          class="rounded-lg border border-border bg-background px-6 py-2 font-medium hover:bg-muted"
-        >
-          Cancel
+        <a href="/admin/posts" class="rounded-lg border border-border bg-background px-6 py-2 font-medium hover:bg-muted">
+          取消
         </a>
       </div>
+
+      <div id="save-status" class="text-xs text-foreground/40"></div>
     </form>
   </div>
 
   <script>
-    // Auto-generate slug from title
-    const titleInput = document.getElementById('post-title');
-    const slugInput = document.getElementById('post-slug');
+    const titleInput = document.getElementById('post-title') as HTMLInputElement;
+    const slugInput = document.getElementById('post-slug') as HTMLInputElement;
     const slugPreview = document.getElementById('slug-preview');
+    const form = document.getElementById('new-post-form') as HTMLFormElement;
+    const saveStatus = document.getElementById('save-status');
 
-    function generateSlug(text) {
-      return text
-        .toLowerCase()
-        .replace(/[^\w\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .substring(0, 50);
+    function generateSlug(text: string) {
+      return text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').substring(0, 50);
     }
 
-    titleInput?.addEventListener('input', (e) => {
-      const target = e.target;
-      if (!(target instanceof HTMLInputElement)) return;
-      
+    titleInput?.addEventListener('input', () => {
       if (!slugInput?.value) {
-        const slug = generateSlug(target.value);
-        if (slugInput) slugInput.value = slug;
+        const slug = generateSlug(titleInput.value);
+        slugInput.value = slug;
         if (slugPreview) slugPreview.textContent = slug || '...';
       }
     });
 
-    slugInput?.addEventListener('input', (e) => {
-      const target = e.target;
-      if (!(target instanceof HTMLInputElement)) return;
-      if (slugPreview) slugPreview.textContent = target.value || '...';
+    slugInput?.addEventListener('input', () => {
+      if (slugPreview) slugPreview.textContent = slugInput.value || '...';
     });
 
     // Form submission
-    const form = document.getElementById('new-post-form');
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      
+      const submitter = (e as SubmitEvent).submitter as HTMLButtonElement;
       const formData = new FormData(form);
       const data = {
         title: formData.get('title'),
@@ -166,61 +108,61 @@ import Layout from "@/layouts/AdminLayout.astro";
         description: formData.get('description'),
         tags: formData.get('tags')?.toString().split(',').map(t => t.trim()).filter(Boolean),
         content: formData.get('content'),
-        action: formData.get('action'),
+        action: submitter?.value || 'draft',
       };
 
       try {
-        const response = await fetch('/api/admin/posts/create', {
+        const res = await fetch('/api/admin/posts/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         });
-
-        if (response.ok) {
-          const result = await response.json();
-          alert('Post created successfully!');
+        const result = await res.json();
+        if (result.success) {
+          localStorage.removeItem('new-post-draft');
           window.location.href = '/admin/posts';
         } else {
-          const error = await response.text();
-          alert('Error creating post: ' + error);
+          alert('创建失败: ' + (result.error || '未知错误'));
         }
       } catch (err) {
-        alert('Error: ' + err);
+        alert('请求失败: ' + err);
       }
     });
 
-    // Auto-save to localStorage
-    const contentInput = document.getElementById('post-content');
-    let autoSaveTimeout;
-
-    function autoSave() {
-      const data = {
-        title: titleInput?.value,
-        slug: slugInput?.value,
-        description: (document.getElementById('post-description') as HTMLTextAreaElement)?.value,
-        tags: (document.getElementById('post-tags') as HTMLInputElement)?.value,
-        content: contentInput?.value,
-        savedAt: new Date().toISOString(),
-      };
-      localStorage.setItem('new-post-draft', JSON.stringify(data));
-    }
-
+    // Auto-save
+    let autoSaveTimeout: ReturnType<typeof setTimeout>;
     form?.addEventListener('input', () => {
       clearTimeout(autoSaveTimeout);
-      autoSaveTimeout = setTimeout(autoSave, 2000);
+      autoSaveTimeout = setTimeout(() => {
+        const data = {
+          title: titleInput?.value,
+          slug: slugInput?.value,
+          description: (document.getElementById('post-description') as HTMLTextAreaElement)?.value,
+          tags: (document.getElementById('post-tags') as HTMLInputElement)?.value,
+          content: (document.getElementById('post-content') as HTMLTextAreaElement)?.value,
+          savedAt: new Date().toISOString(),
+        };
+        localStorage.setItem('new-post-draft', JSON.stringify(data));
+        if (saveStatus) saveStatus.textContent = '已自动保存';
+        setTimeout(() => { if (saveStatus) saveStatus.textContent = ''; }, 2000);
+      }, 2000);
     });
 
-    // Restore from localStorage
+    // Restore saved draft
     const saved = localStorage.getItem('new-post-draft');
     if (saved) {
-      const data = JSON.parse(saved);
-      if (titleInput) titleInput.value = data.title || '';
-      if (slugInput) slugInput.value = data.slug || '';
-      const descInput = document.getElementById('post-description') as HTMLTextAreaElement;
-      if (descInput) descInput.value = data.description || '';
-      const tagsInput = document.getElementById('post-tags') as HTMLInputElement;
-      if (tagsInput) tagsInput.value = data.tags || '';
-      if (contentInput) contentInput.value = data.content || '';
+      try {
+        const data = JSON.parse(saved);
+        if (titleInput) titleInput.value = data.title || '';
+        if (slugInput) slugInput.value = data.slug || '';
+        const desc = document.getElementById('post-description') as HTMLTextAreaElement;
+        if (desc) desc.value = data.description || '';
+        const tags = document.getElementById('post-tags') as HTMLInputElement;
+        if (tags) tags.value = data.tags || '';
+        const content = document.getElementById('post-content') as HTMLTextAreaElement;
+        if (content) content.value = data.content || '';
+        if (slugPreview) slugPreview.textContent = data.slug || '...';
+      } catch { /* ignore parse errors */ }
     }
   </script>
 </Layout>

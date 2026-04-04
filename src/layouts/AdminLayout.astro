@@ -1,6 +1,4 @@
 ---
-import Header from "@/components/Header.astro";
-import Footer from "@/components/Footer.astro";
 import { SITE } from "@/config";
 
 export interface Props {
@@ -8,22 +6,43 @@ export interface Props {
 }
 
 const { title } = Astro.props;
+const currentPath = Astro.url.pathname;
 
 // Check if user is logged in
 const adminAccess = Astro.cookies.get("admin_access")?.value;
 if (!adminAccess && Astro.url.pathname !== "/admin/login") {
   return Astro.redirect("/admin/login");
 }
+
+// Navigation items (server-rendered, no React dependency)
+const navItems = [
+  { title: "仪表盘", titleEn: "Dashboard", href: "/admin", icon: "dashboard" },
+  {
+    title: "文章", titleEn: "Posts", href: "/admin/posts", icon: "file-text",
+    children: [
+      { title: "所有文章", titleEn: "All Posts", href: "/admin/posts", icon: "list" },
+      { title: "新建文章", titleEn: "New Post", href: "/admin/posts/new", icon: "plus" },
+    ],
+  },
+  { title: "媒体库", titleEn: "Media", href: "/admin/media", icon: "image" },
+  { title: "标签", titleEn: "Tags", href: "/admin/tags", icon: "tag" },
+  { title: "设置", titleEn: "Settings", href: "/admin/settings", icon: "settings" },
+];
+
+function isActive(href: string): boolean {
+  if (href === "/admin") return currentPath === "/admin" || currentPath === "/admin/";
+  return currentPath.startsWith(href);
+}
 ---
 
 <!doctype html>
-<html lang="en" class="scroll-smooth">
+<html lang="zh-CN" class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>{title} | {SITE.title} Admin</title>
+    <title>{title} | {SITE.title} 管理后台</title>
   </head>
   <body class="bg-background text-foreground antialiased">
     <div class="flex h-screen overflow-hidden">
@@ -43,27 +62,52 @@ if (!adminAccess && Astro.url.pathname !== "/admin/login") {
 
           <!-- Navigation -->
           <nav class="flex-1 overflow-y-auto px-4 py-4">
-            <ul class="space-y-1" id="admin-nav">
-              <!-- Nav items will be populated by client-side JS -->
+            <ul class="space-y-1">
+              {navItems.map(item => (
+                <li>
+                  <a
+                    href={item.href}
+                    class:list={[
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                      isActive(item.href) && !item.children
+                        ? "bg-accent/10 text-accent"
+                        : "text-foreground/70 hover:bg-muted hover:text-foreground",
+                    ]}
+                  >
+                    <span class="admin-icon" data-icon={item.icon}></span>
+                    {item.title}
+                  </a>
+                  {item.children && (
+                    <ul class="ml-6 mt-1 space-y-1">
+                      {item.children.map(child => (
+                        <li>
+                          <a
+                            href={child.href}
+                            class:list={[
+                              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                              isActive(child.href) && currentPath === child.href
+                                ? "bg-accent/10 text-accent"
+                                : "text-foreground/60 hover:bg-muted hover:text-foreground",
+                            ]}
+                          >
+                            <span class="admin-icon" data-icon={child.icon}></span>
+                            {child.title}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              ))}
             </ul>
           </nav>
 
-          <!-- Language Switcher -->
+          <!-- Bottom: view site -->
           <div class="border-t border-border p-4">
-            <div class="flex gap-2">
-              <button
-                data-lang-switch="en"
-                class="flex-1 rounded border border-border px-3 py-1.5 text-sm hover:bg-muted"
-              >
-                EN
-              </button>
-              <button
-                data-lang-switch="zh"
-                class="flex-1 rounded border border-border px-3 py-1.5 text-sm hover:bg-muted"
-              >
-                中文
-              </button>
-            </div>
+            <a href="/" target="_blank" class="flex items-center gap-2 text-sm text-foreground/60 hover:text-foreground">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              访问网站
+            </a>
           </div>
         </div>
       </aside>
@@ -74,17 +118,7 @@ if (!adminAccess && Astro.url.pathname !== "/admin/login") {
         class="fixed left-4 top-4 z-50 rounded-lg border border-border bg-surface p-2 lg:hidden"
         aria-label="Toggle sidebar"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="3" y1="12" x2="21" y2="12"></line>
           <line x1="3" y1="6" x2="21" y2="6"></line>
           <line x1="3" y1="18" x2="21" y2="18"></line>
@@ -92,31 +126,20 @@ if (!adminAccess && Astro.url.pathname !== "/admin/login") {
       </button>
 
       <!-- Overlay for mobile -->
-      <div
-        id="sidebar-overlay"
-        class="fixed inset-0 z-30 bg-black/50 lg:hidden hidden"
-      ></div>
+      <div id="sidebar-overlay" class="fixed inset-0 z-30 hidden bg-black/50 lg:hidden"></div>
 
       <!-- Main Content -->
       <main class="flex flex-1 flex-col overflow-hidden">
         <!-- Top Header -->
         <header class="flex h-16 items-center justify-between border-b border-border bg-surface px-6">
-          <h1 class="text-xl font-semibold" data-i18n="admin.pageTitle">{title}</h1>
+          <h1 class="text-xl font-semibold">{title}</h1>
           <div class="flex items-center gap-4">
-            <a
-              href="/"
-              target="_blank"
-              class="text-sm text-foreground/60 hover:text-foreground"
-            >
-              View Site →
-            </a>
             <form method="post" action="/api/admin/logout">
               <button
                 type="submit"
                 class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
-                data-i18n="admin.logout"
               >
-                Logout
+                退出登录
               </button>
             </form>
           </div>
@@ -143,6 +166,24 @@ if (!adminAccess && Astro.url.pathname !== "/admin/login") {
       overlay?.addEventListener("click", () => {
         sidebar?.classList.add("-translate-x-full");
         overlay?.classList.add("hidden");
+      });
+
+      // Render SVG icons
+      const icons: Record<string, string> = {
+        dashboard: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
+        "file-text": '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
+        list: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>',
+        plus: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+        image: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+        tag: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
+        settings: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+      };
+
+      document.querySelectorAll('.admin-icon').forEach(el => {
+        const iconName = (el as HTMLElement).dataset.icon;
+        if (iconName && icons[iconName]) {
+          el.innerHTML = icons[iconName];
+        }
       });
     </script>
   </body>

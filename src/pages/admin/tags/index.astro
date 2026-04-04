@@ -1,0 +1,65 @@
+---
+import Layout from "@/layouts/AdminLayout.astro";
+import { getCollection } from "astro:content";
+import { getD1, PostsRepo } from "@/db";
+import { slugifyStr } from "@/utils/slugify";
+
+// Get tags from markdown posts
+const mdPosts = await getCollection("blog");
+const mdTags = mdPosts
+  .filter(p => !p.data.draft)
+  .flatMap(p => p.data.tags);
+
+// Get tags from D1 posts
+let dbTags: string[] = [];
+const db = getD1(Astro.locals);
+if (db) {
+  try {
+    const dbPosts = await PostsRepo.findAll(db, { draft: false });
+    dbTags = dbPosts.flatMap(p => {
+      if (!p.tags) return [];
+      try { return JSON.parse(p.tags); } catch { return []; }
+    });
+  } catch { /* D1 not available */ }
+}
+
+// Count tag occurrences
+const tagCounts = new Map<string, number>();
+for (const tag of [...mdTags, ...dbTags]) {
+  const key = slugifyStr(tag);
+  tagCounts.set(key, (tagCounts.get(key) ?? 0) + 1);
+}
+
+// Build unique tag list with display name and count
+const uniqueTags = Array.from(
+  new Map([...mdTags, ...dbTags].map(t => [slugifyStr(t), t]))
+).map(([slug, name]) => ({
+  slug,
+  name,
+  count: tagCounts.get(slug) ?? 0,
+})).sort((a, b) => b.count - a.count);
+---
+
+<Layout title="标签管理">
+  <div class="mb-6">
+    <h1 class="text-2xl font-semibold">标签管理</h1>
+    <p class="mt-2 text-sm text-foreground/60">共 {uniqueTags.length} 个标签</p>
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {uniqueTags.map(tag => (
+      <div class="flex items-center justify-between rounded-xl border border-border bg-surface p-4">
+        <div>
+          <span class="font-medium">{tag.name}</span>
+          <span class="ml-2 text-sm text-foreground/50">({tag.count} 篇文章)</span>
+        </div>
+        <a href={`/tags/${tag.slug}/`} target="_blank" class="text-sm text-accent hover:underline">
+          查看 →
+        </a>
+      </div>
+    ))}
+    {uniqueTags.length === 0 && (
+      <p class="col-span-full text-center text-foreground/60 py-8">暂无标签</p>
+    )}
+  </div>
+</Layout>

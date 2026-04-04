@@ -1,23 +1,22 @@
 ---
-import { getCollection } from "astro:content";
 import Layout from "@/layouts/Layout.astro";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
 import Tag from "@/components/Tag.astro";
-import getUniqueTags from "@/utils/getUniqueTags";
+import { getAllTags } from "@/utils/getAllPosts";
+import { slugifyStr } from "@/utils/slugify";
 import { SITE } from "@/config";
 
-const posts = await getCollection("blog");
-const tags = getUniqueTags(posts);
+const tags = await getAllTags(Astro.locals);
 ---
 
-<Layout title={`Tags | ${SITE.title}`}>
+<Layout title={`标签 | ${SITE.title}`}>
   <Header />
   <main id="main-content" class="app-layout">
-    <h1 class="text-2xl font-semibold sm:text-3xl">Tags</h1>
+    <h1 class="text-2xl font-semibold sm:text-3xl">标签</h1>
     <ul class="mt-4 flex flex-wrap gap-4">
-      {tags.map(({ tag, tagName }) => (
-        <Tag {tag} {tagName} size="lg" />
+      {tags.map(tag => (
+        <Tag tag={slugifyStr(tag)} tagName={tag} size="lg" />
       ))}
     </ul>
   </main>

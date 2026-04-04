@@ -1,6 +1,7 @@
 import type { MiddlewareHandler } from "astro";
+import { verifySessionCookie, timingSafeEqual } from "@/utils/auth";
 
-const getConfiguredAdminKey = () => process.env.ADMIN_ACCESS_KEY ?? "local-admin-key";
+const DEFAULT_KEY = "local-admin-key";
 
 export const onRequest: MiddlewareHandler = async (context, next) => {
   const pathname = context.url.pathname;
@@ -17,10 +18,27 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     return next();
   }
 
-  const configuredKey = getConfiguredAdminKey();
-  const cookieKey = context.cookies.get("admin_access")?.value;
+  // Get the configured admin key
+  const runtimeEnv = (context.locals as App.Locals).runtime?.env;
+  const configuredKey =
+    (runtimeEnv?.ADMIN_ACCESS_KEY as string | undefined) ??
+    process.env.ADMIN_ACCESS_KEY ??
+    DEFAULT_KEY;
+
+  const cookieValue = context.cookies.get("admin_access")?.value;
   const headerKey = context.request.headers.get("x-admin-access-key");
-  const isAuthorized = cookieKey === configuredKey || headerKey === configuredKey;
+
+  let isAuthorized = false;
+
+  // Check session cookie (hashed token)
+  if (cookieValue) {
+    isAuthorized = await verifySessionCookie(cookieValue, configuredKey);
+  }
+
+  // Fallback: check header key (for API clients)
+  if (!isAuthorized && headerKey) {
+    isAuthorized = timingSafeEqual(headerKey, configuredKey);
+  }
 
   if (isAuthorized) {
     return next();

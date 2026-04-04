@@ -4,88 +4,97 @@ import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
 import Socials from "@/components/Socials.astro";
 import LinkButton from "@/components/LinkButton.astro";
-import NewsletterSignup from "@/components/NewsletterSignup.astro";
+import Datetime from "@/components/Datetime.astro";
 import IconRss from "@/assets/icons/IconRss.svg";
 import IconArrowRight from "@/assets/icons/IconArrowRight.svg";
 import { SITE } from "@/config";
 import { SOCIALS } from "@/constants";
+import { getAllPosts, type UnifiedPost } from "@/utils/getAllPosts";
 
-export const prerender = true;
+const allPosts = await getAllPosts(Astro.locals);
+const featuredPosts = allPosts.filter(p => p.featured);
+const recentPosts = allPosts.slice(0, SITE.postPerIndex);
 ---
 
 <Layout>
   <Header />
   <main id="main-content" data-layout="index" class="app-layout">
-    <section
-      id="hero"
-      class:list={[
-        "rounded-2xl border border-border bg-surface px-6 py-8 shadow-[var(--shadow-soft)]",
-      ]}
-    >
+    <!-- Hero -->
+    <section id="hero" class="rounded-2xl border border-border bg-surface px-6 py-8 shadow-[var(--shadow-soft)]">
       <h1 class="my-4 inline-block text-4xl font-bold sm:my-8 sm:text-5xl">
-        <span data-i18n="home.heroTitle">Essays, Projects, and Field Notes</span>
+        <span data-i18n="home.heroTitle">技术笔记与工程实践</span>
       </h1>
-      <a
-        target="_blank"
-        href="/rss.xml"
-        class="inline-block"
-        aria-label="rss feed"
-        title="RSS Feed"
-      >
-        <IconRss
-          width={20}
-          height={20}
-          class="scale-125 stroke-accent stroke-3 rtl:-rotate-90"
-        />
-        <span class="sr-only">RSS Feed</span>
+      <a target="_blank" href="/rss.xml" class="inline-block" aria-label="RSS" title="RSS Feed">
+        <IconRss width={20} height={20} class="scale-125 stroke-accent stroke-3" />
       </a>
 
-      <p class="max-w-2xl text-lg">
-        <span data-i18n="home.heroDesc">A focused publishing space for long-form engineering writing, build logs, and curated project updates.</span>
+      <p class="max-w-2xl text-lg text-foreground/80">
+        <span data-i18n="home.heroDesc">记录技术探索、项目搭建与工作流优化的个人博客。</span>
       </p>
-      {
-        // only display if at least one social link is enabled
-        SOCIALS.length > 0 && (
-          <div class="mt-4 flex max-sm:flex-col sm:items-center">
-            <div class="me-2 mb-1 whitespace-nowrap sm:mb-0" data-i18n="home.social">Social Links:</div>
-            <Socials />
-          </div>
-        )
-      }
+      {SOCIALS.length > 0 && (
+        <div class="mt-4 flex max-sm:flex-col sm:items-center">
+          <div class="me-2 mb-1 whitespace-nowrap sm:mb-0" data-i18n="home.social">社交链接:</div>
+          <Socials />
+        </div>
+      )}
     </section>
 
-    <section
-      id="featured"
-      class:list={[
-        "mt-8 rounded-2xl border border-border bg-surface px-6 py-8 shadow-[var(--shadow-soft)]",
-      ]}
-    >
-      <h2 class="text-2xl font-semibold tracking-wide" data-i18n="home.featured">Featured</h2>
-      <p class="mt-3 opacity-85" data-i18n="home.featuredDesc">Read the launch post for this production setup.</p>
-      <a href="/blog/hello-world/" class="mt-4 inline-block text-accent underline">
-        Hello World
-      </a>
+    <!-- Featured Posts -->
+    {featuredPosts.length > 0 && (
+      <section id="featured" class="mt-8 rounded-2xl border border-border bg-surface px-6 py-8 shadow-[var(--shadow-soft)]">
+        <h2 class="text-2xl font-semibold tracking-wide" data-i18n="home.featured">精选文章</h2>
+        <ul class="mt-4 space-y-4">
+          {featuredPosts.map(post => (
+            <li>
+              <a href={`/blog/${post.slug}/`}
+                class="text-lg font-medium text-accent decoration-dashed underline-offset-4 hover:underline">
+                {post.title}
+              </a>
+              <p class="mt-1 text-sm text-foreground/70">{post.description}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    <!-- Recent Posts -->
+    <section id="recent" class="mt-8">
+      <h2 class="text-2xl font-semibold" data-i18n="home.recentPosts">最新文章</h2>
+      <ul class="mt-4 space-y-6">
+        {recentPosts.map(post => (
+          <li class="rounded-2xl border border-border bg-surface px-6 py-5 shadow-[var(--shadow-soft)] transition-transform hover:scale-[1.01]">
+            <a href={`/blog/${post.slug}/`}
+              class="text-lg font-medium text-accent decoration-dashed underline-offset-4 hover:underline">
+              {post.title}
+            </a>
+            <Datetime pubDatetime={post.pubDatetime} modDatetime={post.modDatetime} />
+            <p class="mt-2 text-foreground/80">{post.description}</p>
+            {post.tags.length > 0 && (
+              <div class="mt-3 flex flex-wrap gap-2">
+                {post.tags.slice(0, 4).map(tag => (
+                  <span class="rounded-full bg-muted px-3 py-0.5 text-xs text-foreground/70">{tag}</span>
+                ))}
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
     </section>
 
+    <!-- CTA -->
     <div class="my-8 text-center">
       <LinkButton href="/blog/">
-        <span data-i18n="home.allArticles">All Articles</span>
+        <span data-i18n="home.allArticles">查看全部文章</span>
         <IconArrowRight class="inline-block rtl:-rotate-180" />
       </LinkButton>
-      <div class="mt-4">
-        <a href="/start-here/" class="text-accent underline" data-i18n="home.firstTimeGuide">First-Time Guide</a>
-      </div>
     </div>
-
-    <NewsletterSignup />
   </main>
   <Footer />
 </Layout>
 
 <script>
   document.addEventListener("astro:page-load", () => {
-    const indexLayout = (document.querySelector("#main-content") as HTMLElement)
-      ?.dataset?.layout;
+    const indexLayout = (document.querySelector("#main-content") as HTMLElement)?.dataset?.layout;
     if (indexLayout) {
       sessionStorage.setItem("backUrl", "/");
     }

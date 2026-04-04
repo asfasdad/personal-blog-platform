@@ -1,6 +1,7 @@
 import { defineConfig } from 'astro/config'
 import cloudflare from '@astrojs/cloudflare'
 import node from '@astrojs/node'
+import react from '@astrojs/react'
 import sitemap from '@astrojs/sitemap'
 import tailwindcss from '@tailwindcss/vite'
 import remarkToc from 'remark-toc'
@@ -24,6 +25,7 @@ export default defineConfig({
   ...(adapter ? { adapter } : {}),
   site: 'https://blog.158247.xyz',
   integrations: [
+    react(),
     sitemap(),
   ],
   markdown: {

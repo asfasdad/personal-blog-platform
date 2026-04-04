@@ -1,0 +1,20 @@
+# This file is used to configure D1 database binding for deployment.
+# The Astro Cloudflare adapter generates dist/server/wrangler.json at build time,
+# but D1 bindings need to be added manually or via Cloudflare Dashboard.
+#
+# To deploy with D1 binding:
+# pnpm dlx wrangler deploy --config dist/server/wrangler.json \
+#   --d1 DB=c3c9706e-2b4b-4a1d-853a-6e4d9b999af9
+
+name = "personal-blog-platform"
+compatibility_date = "2025-09-27"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "blog-cms-db"
+database_id = "c3c9706e-2b4b-4a1d-853a-6e4d9b999af9"
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "blog-media"

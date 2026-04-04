@@ -1,81 +1,107 @@
 import type { APIRoute } from "astro";
+import { getD1, PostsRepo } from "@/db";
 
-export const PUT: APIRoute = async ({ request, params }) => {
+export const PUT: APIRoute = async ({ request, params, locals }) => {
   const { id } = params;
-  
+
   try {
+    const db = getD1(locals);
+    if (!db) {
+      return new Response(
+        JSON.stringify({ error: "Database not available" }),
+        { status: 503, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!id) {
+      return new Response(
+        JSON.stringify({ error: "Post ID is required" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const data = await request.json();
     const { title, description, tags, content, draft } = data;
 
-    // Validate required fields
     if (!title || !content) {
-      return new Response("Title and content are required", { status: 400 });
+      return new Response(
+        JSON.stringify({ error: "Title and content are required" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
-    // Create post data
-    const postData = {
+    const existing = await PostsRepo.findBySlug(db, id);
+    if (!existing) {
+      return new Response(
+        JSON.stringify({ error: "Post not found" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const post = await PostsRepo.update(db, id, {
       title,
       description: description || "",
+      content,
       tags: tags || [],
-      draft,
-    };
-
-    // In a real implementation, you would:
-    // 1. Update in database (Cloudflare D1)
-    // 2. Or use GitHub API to update the file
-    // 3. Or update in KV and trigger a rebuild
-
-    // For now, return success (implement actual storage later)
-    console.log("Updating post:", {
-      slug: id,
-      ...postData,
-      contentLength: content.length,
+      draft: draft ?? false,
     });
 
     return new Response(
       JSON.stringify({
         success: true,
         slug: id,
+        post,
         message: "Post updated successfully",
       }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error updating post:", error);
+    const message = error instanceof Error ? error.message : "Failed to update post";
     return new Response(
-      JSON.stringify({ error: "Failed to update post" }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 };
 
-export const DELETE: APIRoute = async ({ params }) => {
+export const DELETE: APIRoute = async ({ params, locals }) => {
   const { id } = params;
-  
-  try {
-    // In a real implementation, you would:
-    // 1. Delete from database (Cloudflare D1)
-    // 2. Or use GitHub API to delete the file
 
-    console.log("Deleting post:", id);
+  try {
+    const db = getD1(locals);
+    if (!db) {
+      return new Response(
+        JSON.stringify({ error: "Database not available" }),
+        { status: 503, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!id) {
+      return new Response(
+        JSON.stringify({ error: "Post ID is required" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const deleted = await PostsRepo.delete(db, id);
+    if (!deleted) {
+      return new Response(
+        JSON.stringify({ error: "Post not found" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
         message: "Post deleted successfully",
       }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error deleting post:", error);
+    const message = error instanceof Error ? error.message : "Failed to delete post";
     return new Response(
-      JSON.stringify({ error: "Failed to delete post" }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }

@@ -1,41 +1,61 @@
 ---
-import { getCollection } from "astro:content";
-import type { GetStaticPaths, Page } from "astro";
-import type { CollectionEntry } from "astro:content";
 import Layout from "@/layouts/Layout.astro";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
-import Card from "@/components/Card.astro";
-import Pagination from "@/components/Pagination.astro";
-import getSortedPosts from "@/utils/getSortedPosts";
+import Datetime from "@/components/Datetime.astro";
+import { getAllPosts, type UnifiedPost } from "@/utils/getAllPosts";
 import { SITE } from "@/config";
 
-export const prerender = process.env.E2E_PRERENDER === "1" || process.env.LIGHTHOUSE_STATIC === "1";
+const allPosts = await getAllPosts(Astro.locals);
 
-export const getStaticPaths = (async ({ paginate }) => {
-  const posts = await getCollection("blog");
-  const sortedPosts = getSortedPosts(posts);
-
-  return paginate(sortedPosts, { pageSize: SITE.postPerPage });
-}) satisfies GetStaticPaths;
-
-interface Props {
-  page: Page<CollectionEntry<"blog">>;
-}
-
-const { page } = Astro.props;
+// Manual pagination from URL
+const url = new URL(Astro.request.url);
+const pageParam = url.pathname.split("/").filter(Boolean);
+const pageNum = pageParam.length > 1 ? parseInt(pageParam[pageParam.length - 1]) || 1 : 1;
+const pageSize = SITE.postPerPage;
+const totalPages = Math.ceil(allPosts.length / pageSize);
+const start = (pageNum - 1) * pageSize;
+const pagePosts = allPosts.slice(start, start + pageSize);
 ---
 
-<Layout title={`Blog | ${SITE.title}`}>
+<Layout title={`博客 - 第${pageNum}页 | ${SITE.title}`}>
   <Header />
   <main id="main-content" class="app-layout">
-    <h1 class="text-2xl font-semibold sm:text-3xl">Blog</h1>
-    <ul>
-      {page.data.map(data => (
-        <Card {...data} />
+    <h1 class="text-2xl font-semibold sm:text-3xl">博客</h1>
+    <ul class="mt-6 space-y-6">
+      {pagePosts.map(post => (
+        <li class="my-6">
+          <a
+            href={`/blog/${post.slug}/`}
+            class="inline-block text-lg font-medium text-accent decoration-dashed underline-offset-4 hover:underline focus-visible:no-underline focus-visible:underline-offset-0"
+          >
+            <h2>{post.title}</h2>
+          </a>
+          <Datetime pubDatetime={post.pubDatetime} modDatetime={post.modDatetime} />
+          <p class="mt-2 text-foreground/80">{post.description}</p>
+        </li>
       ))}
     </ul>
+
+    {totalPages > 1 && (
+      <nav class="mt-8 flex items-center justify-center gap-4" aria-label="分页导航">
+        {pageNum > 1 && (
+          <a href={pageNum === 2 ? "/blog/" : `/blog/${pageNum - 1}/`}
+            class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">
+            上一页
+          </a>
+        )}
+        <span class="text-sm text-foreground/60">
+          第 {pageNum} / {totalPages} 页
+        </span>
+        {pageNum < totalPages && (
+          <a href={`/blog/${pageNum + 1}/`}
+            class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">
+            下一页
+          </a>
+        )}
+      </nav>
+    )}
   </main>
-  <Pagination {page} />
   <Footer />
 </Layout>

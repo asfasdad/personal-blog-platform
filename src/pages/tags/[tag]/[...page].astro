@@ -1,51 +1,50 @@
 ---
-import { getCollection } from "astro:content";
-import type { GetStaticPaths, Page } from "astro";
-import type { CollectionEntry } from "astro:content";
 import Layout from "@/layouts/Layout.astro";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
-import Card from "@/components/Card.astro";
-import Pagination from "@/components/Pagination.astro";
-import getPostsByTag from "@/utils/getPostsByTag";
-import getUniqueTags from "@/utils/getUniqueTags";
+import Datetime from "@/components/Datetime.astro";
+import { getAllPosts, type UnifiedPost } from "@/utils/getAllPosts";
+import { slugifyStr } from "@/utils/slugify";
 import { SITE } from "@/config";
 
-export const prerender = process.env.E2E_PRERENDER === "1" || process.env.LIGHTHOUSE_STATIC === "1";
-
-export const getStaticPaths = (async ({ paginate }) => {
-  const posts = await getCollection("blog");
-  const tags = getUniqueTags(posts);
-
-  return tags.flatMap(({ tag, tagName }) => {
-    const taggedPosts = getPostsByTag(posts, tag);
-    return paginate(taggedPosts, {
-      params: { tag },
-      props: { tagName },
-      pageSize: SITE.postPerPage,
-    });
-  });
-}) satisfies GetStaticPaths;
-
-interface Props {
-  page: Page<CollectionEntry<"blog">>;
-  tagName: string;
-}
-
-const { page, tagName } = Astro.props;
 const { tag } = Astro.params;
+if (!tag) return Astro.redirect("/tags/");
+
+const allPosts = await getAllPosts(Astro.locals);
+const tagPosts = allPosts.filter(post =>
+  post.tags.some(t => slugifyStr(t) === tag)
+);
+
+// Find original tag name
+const tagName = tagPosts.length > 0
+  ? tagPosts[0].tags.find(t => slugifyStr(t) === tag) ?? tag
+  : tag;
 ---
 
-<Layout title={`Tag: ${tagName} | ${SITE.title}`}>
+<Layout title={`标签: ${tagName} | ${SITE.title}`}>
   <Header />
   <main id="main-content" class="app-layout">
-    <h1 class="text-2xl font-semibold sm:text-3xl">Tag: {tagName}</h1>
-    <ul>
-      {page.data.map(data => (
-        <Card {...data} />
+    <h1 class="text-2xl font-semibold sm:text-3xl">
+      标签: <span class="text-accent">{tagName}</span>
+    </h1>
+    <p class="mt-2 text-foreground/60">共 {tagPosts.length} 篇文章</p>
+    <ul class="mt-6 space-y-6">
+      {tagPosts.map(post => (
+        <li class="my-6">
+          <a
+            href={`/blog/${post.slug}/`}
+            class="inline-block text-lg font-medium text-accent decoration-dashed underline-offset-4 hover:underline"
+          >
+            <h2>{post.title}</h2>
+          </a>
+          <Datetime pubDatetime={post.pubDatetime} modDatetime={post.modDatetime} />
+          <p class="mt-2 text-foreground/80">{post.description}</p>
+        </li>
       ))}
     </ul>
+    {tagPosts.length === 0 && (
+      <p class="mt-8 text-foreground/60">该标签下暂无文章。</p>
+    )}
   </main>
-  <Pagination {page} />
   <Footer />
 </Layout>

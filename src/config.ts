@@ -1,23 +1,23 @@
 export const SITE = {
-  website: "https://blog.158247.xyz", // deployed domain
-  author: "Author Name",
+  website: "https://blog.158247.xyz",
+  author: "Kayden",
   profile: "https://blog.158247.xyz/about",
-  desc: "A personal blog built with Astro.",
-  title: "Personal Blog",
+  desc: "技术笔记、项目记录与工程实践分享",
+  title: "Kayden's Blog",
   ogImage: "og.png",
   lightAndDarkMode: true,
   postPerIndex: 4,
-  postPerPage: 4,
-  scheduledPostMargin: 15 * 60 * 1000, // 15 minutes
+  postPerPage: 6,
+  scheduledPostMargin: 15 * 60 * 1000,
   showArchives: true,
-  showBackButton: true, // show back button in post detail
+  showBackButton: true,
   editPost: {
     enabled: false,
-    text: "Edit page",
+    text: "编辑页面",
     url: "https://github.com/example/repo/edit/main/",
   },
   dynamicOgImage: false,
-  dir: "ltr", // "rtl" | "auto"
-  lang: "en", // html lang code. Set this empty and default will be "en"
-  timezone: "Asia/Shanghai", // Default global timezone (IANA format)
+  dir: "ltr",
+  lang: "zh-CN",
+  timezone: "Asia/Shanghai",
 } as const;

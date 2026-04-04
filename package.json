@@ -53,6 +53,7 @@
     "dayjs": "^1.11.20",
     "lodash.kebabcase": "^4.1.1",
     "lucide-react": "^0.577.0",
+    "marked": "^17.0.5",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "recharts": "^3.8.0",

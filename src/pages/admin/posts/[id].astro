@@ -1,161 +1,136 @@
 ---
 import Layout from "@/layouts/AdminLayout.astro";
+import MarkdownEditor from "@/components/admin/MarkdownEditor";
 import { getCollection } from "astro:content";
+import { getD1, PostsRepo } from "@/db";
 
 const { id } = Astro.params;
 
-// Get post data
-const posts = await getCollection("blog");
-const post = posts.find(p => p.slug === id);
-
-if (!post) {
+if (!id) {
   return Astro.redirect("/admin/posts");
 }
 
-const { title, description, tags, pubDatetime, draft } = post.data;
-const content = post.body;
+// Try markdown first, then D1
+let postTitle = "";
+let postDescription = "";
+let postTags: string[] = [];
+let postDraft = false;
+let postContent = "";
+let postSource: "md" | "db" = "md";
+
+const posts = await getCollection("blog");
+const mdPost = posts.find(p => p.id === id);
+
+if (mdPost) {
+  postTitle = mdPost.data.title;
+  postDescription = mdPost.data.description;
+  postTags = mdPost.data.tags ?? [];
+  postDraft = mdPost.data.draft ?? false;
+  postContent = mdPost.body ?? "";
+  postSource = "md";
+} else {
+  // Try D1
+  const db = getD1(Astro.locals);
+  if (db) {
+    const dbPost = await PostsRepo.findBySlug(db, id);
+    if (dbPost) {
+      postTitle = dbPost.title;
+      postDescription = dbPost.description ?? "";
+      try { postTags = dbPost.tags ? JSON.parse(dbPost.tags) : []; } catch { postTags = []; }
+      postDraft = dbPost.draft === 1;
+      postContent = dbPost.content;
+      postSource = "db";
+    }
+  }
+}
+
+if (!postTitle) {
+  return Astro.redirect("/admin/posts");
+}
 ---
 
-<Layout title={`Edit: ${title}`}>
+<Layout title={`编辑: ${postTitle}`}>
   <div class="mx-auto max-w-4xl">
-    <!-- Header -->
     <div class="mb-6 flex items-center justify-between">
-      <h1 class="text-2xl font-semibold" data-i18n="admin.editPost">Edit Post</h1>
-      <a
-        href="/admin/posts"
-        class="text-sm text-foreground/60 hover:text-foreground"
-      >
-        ← Back to Posts
-      </a>
+      <h1 class="text-2xl font-semibold">编辑文章</h1>
+      <a href="/admin/posts" class="text-sm text-foreground/60 hover:text-foreground">← 返回文章列表</a>
     </div>
 
-    <!-- Form -->
-    <form id="edit-post-form" class="space-y-6" data-post-id={id}>
-      <!-- Title -->
+    {postSource === "md" && (
+      <div class="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+        此文章来自 Markdown 文件，在线编辑将保存到数据库。原 Markdown 文件不会被修改。
+      </div>
+    )}
+
+    <form id="edit-post-form" class="space-y-6" data-post-id={id} data-source={postSource}>
       <div>
-        <label class="mb-2 block text-sm font-medium" data-i18n="admin.postTitle">
-          Title *
-        </label>
-        <input
-          type="text"
-          name="title"
-          id="post-title"
-          required
-          value={title}
-          class="w-full rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none"
-        />
+        <label class="mb-2 block text-sm font-medium">标题 *</label>
+        <input type="text" name="title" id="post-title" required value={postTitle}
+          class="w-full rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none" />
       </div>
 
-      <!-- Slug -->
       <div>
-        <label class="mb-2 block text-sm font-medium" data-i18n="admin.postSlug">
-          Slug
-        </label>
-        <input
-          type="text"
-          name="slug"
-          id="post-slug"
-          value={id}
-          readonly
-          class="w-full rounded-lg border border-border bg-muted px-4 py-2 text-foreground/60"
-        />
+        <label class="mb-2 block text-sm font-medium">Slug</label>
+        <input type="text" name="slug" id="post-slug" value={id} readonly
+          class="w-full rounded-lg border border-border bg-muted px-4 py-2 text-foreground/60" />
         <p class="mt-1 text-xs text-foreground/60">URL: /blog/{id}/</p>
       </div>
 
-      <!-- Description -->
       <div>
-        <label class="mb-2 block text-sm font-medium" data-i18n="admin.postDescription">
-          Description
-        </label>
-        <textarea
-          name="description"
-          id="post-description"
-          rows="2"
-          class="w-full rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none"
-        >{description}</textarea>
+        <label class="mb-2 block text-sm font-medium">描述</label>
+        <textarea name="description" id="post-description" rows="2"
+          class="w-full rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none">{postDescription}</textarea>
       </div>
 
-      <!-- Tags -->
       <div>
-        <label class="mb-2 block text-sm font-medium" data-i18n="admin.postTags">
-          Tags
-        </label>
-        <input
-          type="text"
-          name="tags"
-          id="post-tags"
-          value={tags?.join(", ")}
+        <label class="mb-2 block text-sm font-medium">标签</label>
+        <input type="text" name="tags" id="post-tags" value={postTags.join(", ")}
           class="w-full rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none"
-          placeholder="tag1, tag2, tag3"
-        />
+          placeholder="标签1, 标签2, 标签3" />
       </div>
 
-      <!-- Status -->
       <div>
-        <label class="mb-2 block text-sm font-medium" data-i18n="admin.postStatus">
-          Status
-        </label>
-        <select
-          name="draft"
-          id="post-status"
-          class="w-full rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none"
-        >
-          <option value="false" selected={!draft}>Published</option>
-          <option value="true" selected={draft}>Draft</option>
+        <label class="mb-2 block text-sm font-medium">状态</label>
+        <select name="draft" id="post-status"
+          class="w-full rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none">
+          <option value="false" selected={!postDraft}>已发布</option>
+          <option value="true" selected={postDraft}>草稿</option>
         </select>
       </div>
 
-      <!-- Content -->
       <div>
-        <label class="mb-2 block text-sm font-medium" data-i18n="admin.postContent">
-          Content *
-        </label>
-        <div id="editor-container" class="min-h-[400px] rounded-lg border border-border">
-          <textarea
-            name="content"
-            id="post-content"
-            required
-            rows="15"
-            class="w-full rounded-lg bg-background px-4 py-2 font-mono text-sm focus:border-accent focus:outline-none"
-          >{content}</textarea>
-        </div>
-        <p class="mt-2 text-xs text-foreground/60">Supports Markdown formatting</p>
+        <label class="mb-2 block text-sm font-medium">内容 * (Markdown)</label>
+        <MarkdownEditor client:only="react" initialValue={postContent} height={500} />
+        <textarea name="content" id="post-content" required rows="20"
+          class="hidden">{postContent}</textarea>
       </div>
 
-      <!-- Actions -->
       <div class="flex gap-3 pt-4">
-        <button
-          type="submit"
-          class="rounded-lg bg-accent px-6 py-2 font-medium text-white hover:bg-accent/90"
-        >
-          Save Changes
+        <button type="submit" class="rounded-lg bg-accent px-6 py-2 font-medium text-white hover:bg-accent/90">
+          保存更改
         </button>
-        
-        <a
-          href={`/blog/${id}/`}
-          target="_blank"
-          class="rounded-lg border border-border bg-surface px-6 py-2 font-medium hover:bg-muted"
-        >
-          Preview
-        </a>
-        
-        <a
-          href="/admin/posts"
-          class="rounded-lg border border-border bg-background px-6 py-2 font-medium hover:bg-muted"
-        >
-          Cancel
+        {!postDraft && (
+          <a href={`/blog/${id}/`} target="_blank"
+            class="rounded-lg border border-border bg-surface px-6 py-2 font-medium hover:bg-muted">
+            预览
+          </a>
+        )}
+        <a href="/admin/posts" class="rounded-lg border border-border bg-background px-6 py-2 font-medium hover:bg-muted">
+          取消
         </a>
       </div>
+
+      <div id="save-status" class="text-xs text-foreground/40"></div>
     </form>
   </div>
 
   <script>
-    const form = document.getElementById('edit-post-form');
-    const postId = form?.getAttribute('data-post-id');
+    const form = document.getElementById('edit-post-form') as HTMLFormElement;
+    const postId = form?.dataset.postId;
+    const saveStatus = document.getElementById('save-status');
 
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      
       const formData = new FormData(form);
       const data = {
         title: formData.get('title'),
@@ -166,46 +141,40 @@ const content = post.body;
       };
 
       try {
-        const response = await fetch(`/api/admin/posts/${postId}`, {
+        const res = await fetch(`/api/admin/posts/${postId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         });
-
-        if (response.ok) {
-          alert('Post updated successfully!');
+        const result = await res.json();
+        if (result.success) {
+          localStorage.removeItem(`edit-post-${postId}`);
           window.location.href = '/admin/posts';
         } else {
-          const error = await response.text();
-          alert('Error updating post: ' + error);
+          alert('保存失败: ' + (result.error || '未知错误'));
         }
       } catch (err) {
-        alert('Error: ' + err);
+        alert('请求失败: ' + err);
       }
     });
 
-    // Auto-save to localStorage
-    let autoSaveTimeout;
-    const inputs = form?.querySelectorAll('input, textarea, select');
-    
-    function autoSave() {
-      const formData = new FormData(form);
-      const data = {
-        title: formData.get('title'),
-        description: formData.get('description'),
-        tags: formData.get('tags'),
-        content: formData.get('content'),
-        draft: formData.get('draft'),
-        savedAt: new Date().toISOString(),
-      };
-      localStorage.setItem(`edit-post-${postId}`, JSON.stringify(data));
-    }
-
-    inputs?.forEach(input => {
-      input.addEventListener('input', () => {
-        clearTimeout(autoSaveTimeout);
-        autoSaveTimeout = setTimeout(autoSave, 2000);
-      });
+    // Auto-save
+    let autoSaveTimeout: ReturnType<typeof setTimeout>;
+    form?.addEventListener('input', () => {
+      clearTimeout(autoSaveTimeout);
+      autoSaveTimeout = setTimeout(() => {
+        const formData = new FormData(form);
+        localStorage.setItem(`edit-post-${postId}`, JSON.stringify({
+          title: formData.get('title'),
+          description: formData.get('description'),
+          tags: formData.get('tags'),
+          content: formData.get('content'),
+          draft: formData.get('draft'),
+          savedAt: new Date().toISOString(),
+        }));
+        if (saveStatus) saveStatus.textContent = '已自动保存';
+        setTimeout(() => { if (saveStatus) saveStatus.textContent = ''; }, 2000);
+      }, 2000);
     });
   </script>
 </Layout>

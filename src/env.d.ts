@@ -15,7 +15,12 @@ declare global {
 declare namespace App {
   interface Locals {
     runtime?: {
-      env?: Record<string, string | undefined>;
+      env?: {
+        DB?: D1Database;
+        MEDIA?: R2Bucket;
+        ADMIN_ACCESS_KEY?: string;
+        [key: string]: unknown;
+      };
     };
   }
 }

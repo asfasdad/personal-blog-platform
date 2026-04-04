@@ -1,14 +1,26 @@
 ---
-import { getCollection } from "astro:content";
-import type { GetStaticPaths } from "astro";
-import type { CollectionEntry } from "astro:content";
+import { getCollection, render, type CollectionEntry } from "astro:content";
 import PostDetails from "@/layouts/PostDetails.astro";
 import getSortedPosts from "@/utils/getSortedPosts";
 import { getPath } from "@/utils/getPath";
+import { getD1, PostsRepo } from "@/db";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import Datetime from "@/components/Datetime.astro";
+import Tag from "@/components/Tag.astro";
+import BackButton from "@/components/BackButton.astro";
+import BackToTopButton from "@/components/BackToTopButton.astro";
+import ShareLinks from "@/components/ShareLinks.astro";
+import Comments from "@/components/Comments.astro";
+import { SITE } from "@/config";
+import { slugifyStr } from "@/utils/slugify";
+import { marked } from "marked";
 
 export const prerender = process.env.E2E_PRERENDER === "1" || process.env.LIGHTHOUSE_STATIC === "1";
 
-export const getStaticPaths = (async () => {
+// Generate static paths for markdown posts
+export async function getStaticPaths() {
   const posts = await getCollection("blog");
   const sortedPosts = getSortedPosts(posts);
 
@@ -16,14 +28,196 @@ export const getStaticPaths = (async () => {
     params: { slug: getPath(post.id, post.filePath, false) },
     props: { post, posts: sortedPosts },
   }));
-}) satisfies GetStaticPaths;
-
-interface Props {
-  post: CollectionEntry<"blog">;
-  posts: CollectionEntry<"blog">[];
 }
 
-const { post, posts } = Astro.props;
+const { slug } = Astro.params;
+
+// Try to get from static props first (markdown post)
+let mdPost: CollectionEntry<"blog"> | null = null;
+let mdPosts: CollectionEntry<"blog">[] = [];
+let dbPost: Awaited<ReturnType<typeof PostsRepo.findBySlug>> = null;
+
+try {
+  const props = Astro.props as { post?: CollectionEntry<"blog">; posts?: CollectionEntry<"blog">[] };
+  if (props.post) {
+    mdPost = props.post;
+    mdPosts = props.posts ?? [];
+  }
+} catch {
+  // Not a static path, try D1
+}
+
+// If no markdown post found, try D1
+if (!mdPost && slug) {
+  const db = getD1(Astro.locals);
+  if (db) {
+    try {
+      dbPost = await PostsRepo.findBySlug(db, slug);
+    } catch { /* D1 not available */ }
+  }
+}
+
+// 404 if neither source has the post
+if (!mdPost && !dbPost) {
+  return Astro.redirect("/404");
+}
+
+// Parse D1 post data if needed
+let dbTags: string[] = [];
+let dbHtml = "";
+if (dbPost) {
+  if (dbPost.tags) {
+    try { dbTags = JSON.parse(dbPost.tags); } catch { dbTags = []; }
+  }
+  dbHtml = await marked.parse(dbPost.content || "");
+}
 ---
 
-<PostDetails {post} {posts} />
+{mdPost ? (
+  <PostDetails post={mdPost} posts={mdPosts} />
+) : dbPost ? (
+  <Layout title={`${dbPost.title} | ${SITE.title}`} scrollSmooth>
+    <Header />
+    <BackButton />
+    <main
+      id="main-content"
+      class:list={["app-layout pb-12", { "mt-8": !SITE.showBackButton }]}
+    >
+      <h1 class="inline-block text-2xl font-bold text-accent sm:text-3xl">
+        {dbPost.title}
+      </h1>
+      <div class="my-2 flex items-center gap-2">
+        <Datetime
+          pubDatetime={new Date(dbPost.pub_datetime)}
+          modDatetime={dbPost.mod_datetime ? new Date(dbPost.mod_datetime) : undefined}
+          size="lg"
+        />
+      </div>
+      <div class="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_16rem]">
+        <article
+          id="article"
+          class="app-prose w-full max-w-app prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)"
+          set:html={dbHtml}
+        />
+
+        <aside
+          class="h-fit rounded-xl border border-border bg-surface p-4 shadow-[var(--shadow-soft)]"
+          aria-labelledby="toc-title"
+        >
+          <h2 id="toc-title" class="text-lg font-semibold">目录</h2>
+          <nav id="post-toc" class="mt-3">
+            <p id="post-toc-empty" class="text-sm text-foreground/80">
+              标题链接将在此处显示。
+            </p>
+            <ul id="post-toc-list" class="space-y-2 text-sm"></ul>
+          </nav>
+        </aside>
+      </div>
+
+      <hr class="my-8 border-dashed" />
+
+      <ul class="mt-4 mb-8 flex flex-wrap gap-4 sm:my-8">
+        {dbTags.map(tag => <Tag tag={slugifyStr(tag)} tagName={tag} size="sm" />)}
+      </ul>
+
+      <BackToTopButton />
+      <ShareLinks />
+      <hr class="my-6 border-dashed" />
+      <Comments />
+    </main>
+    <Footer />
+  </Layout>
+) : null}
+
+<script is:inline data-astro-rerun>
+  function createProgressBar() {
+    const progressContainer = document.createElement("div");
+    progressContainer.className = "progress-container fixed top-0 z-10 h-1 w-full bg-background";
+    const progressBar = document.createElement("div");
+    progressBar.className = "progress-bar h-1 w-0 bg-accent";
+    progressBar.id = "myBar";
+    progressContainer.appendChild(progressBar);
+    document.body.appendChild(progressContainer);
+  }
+  createProgressBar();
+
+  function updateScrollProgress() {
+    document.addEventListener("scroll", () => {
+      const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = (winScroll / height) * 100;
+      const myBar = document.getElementById("myBar");
+      if (myBar) myBar.style.width = scrolled + "%";
+    });
+  }
+  updateScrollProgress();
+
+  function buildTableOfContents() {
+    const tocList = document.querySelector("#post-toc-list");
+    const tocEmpty = document.querySelector("#post-toc-empty");
+    const headings = Array.from(document.querySelectorAll("#article h2, #article h3, #article h4"));
+    if (!(tocList instanceof HTMLUListElement)) return;
+    tocList.innerHTML = "";
+    for (const heading of headings) {
+      if (!(heading instanceof HTMLElement) || !heading.id) continue;
+      const li = document.createElement("li");
+      const anchor = document.createElement("a");
+      anchor.href = `#${heading.id}`;
+      anchor.className = "text-accent underline-offset-4 hover:underline";
+      anchor.textContent = heading.textContent ?? "Section";
+      li.appendChild(anchor);
+      tocList.appendChild(li);
+    }
+    if (tocEmpty instanceof HTMLElement) {
+      tocEmpty.classList.toggle("hidden", tocList.childElementCount > 0);
+    }
+  }
+  buildTableOfContents();
+
+  function addHeadingLinks() {
+    const headings = Array.from(document.querySelectorAll("h2, h3, h4, h5, h6"));
+    for (const heading of headings) {
+      heading.classList.add("group");
+      const link = document.createElement("a");
+      link.className = "heading-link ms-2 no-underline opacity-75 md:opacity-0 md:group-hover:opacity-100";
+      link.href = "#" + heading.id;
+      const span = document.createElement("span");
+      span.ariaHidden = "true";
+      span.innerText = "#";
+      link.appendChild(span);
+      heading.appendChild(link);
+    }
+  }
+  addHeadingLinks();
+
+  function attachCopyButtons() {
+    const copyButtonLabel = "Copy";
+    const codeBlocks = Array.from(document.querySelectorAll("pre"));
+    for (const codeBlock of codeBlocks) {
+      const wrapper = document.createElement("div");
+      wrapper.style.position = "relative";
+      const computedStyle = getComputedStyle(codeBlock);
+      const hasFileNameOffset = computedStyle.getPropertyValue("--file-name-offset").trim() !== "";
+      const topClass = hasFileNameOffset ? "top-(--file-name-offset)" : "-top-3";
+      const copyButton = document.createElement("button");
+      copyButton.className = `copy-code absolute end-3 ${topClass} rounded bg-muted border border-muted px-2 py-1 text-xs leading-4 text-foreground font-medium`;
+      copyButton.innerHTML = copyButtonLabel;
+      codeBlock.setAttribute("tabindex", "0");
+      codeBlock.appendChild(copyButton);
+      codeBlock?.parentNode?.insertBefore(wrapper, codeBlock);
+      wrapper.appendChild(codeBlock);
+      copyButton.addEventListener("click", async () => {
+        const code = codeBlock.querySelector("code");
+        const text = code?.innerText;
+        await navigator.clipboard.writeText(text ?? "");
+        copyButton.innerText = "Copied";
+        setTimeout(() => { copyButton.innerText = copyButtonLabel; }, 700);
+      });
+    }
+  }
+  attachCopyButtons();
+
+  document.addEventListener("astro:after-swap", () =>
+    window.scrollTo({ left: 0, top: 0, behavior: "instant" })
+  );
+</script>

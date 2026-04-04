@@ -1,56 +1,74 @@
 ---
 import Layout from "@/layouts/AdminLayout.astro";
 import { getCollection } from "astro:content";
-import { Plus, Search, Edit, Eye, Trash2 } from "lucide-react";
+import { getD1, PostsRepo } from "@/db";
 
-// Get all posts
-const posts = await getCollection("blog");
-const sortedPosts = posts.sort(
-  (a, b) => b.data.pubDatetime.valueOf() - a.data.pubDatetime.valueOf()
-);
+// Get markdown posts
+const mdPosts = await getCollection("blog");
 
-// Format date
-const formatDate = (date: Date) => {
-  return new Intl.DateTimeFormat("zh-CN", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(date);
-};
+// Get D1 posts
+let dbPosts: Awaited<ReturnType<typeof PostsRepo.findAll>> = [];
+const db = getD1(Astro.locals);
+if (db) {
+  try {
+    dbPosts = await PostsRepo.findAll(db);
+  } catch { /* D1 not available */ }
+}
+
+// Combine and sort
+type PostItem = { slug: string; title: string; draft: boolean; tags: string[]; pubDatetime: Date; source: "md" | "db" };
+const allPosts: PostItem[] = [
+  ...mdPosts.map(p => ({
+    slug: p.id,
+    title: p.data.title,
+    draft: p.data.draft ?? false,
+    tags: p.data.tags ?? [],
+    pubDatetime: new Date(p.data.pubDatetime),
+    source: "md" as const,
+  })),
+  ...dbPosts.map(p => {
+    let tags: string[] = [];
+    if (p.tags) {
+      try { tags = JSON.parse(p.tags); } catch { tags = []; }
+    }
+    return {
+      slug: p.slug,
+      title: p.title,
+      draft: p.draft === 1,
+      tags,
+      pubDatetime: new Date(p.pub_datetime),
+      source: "db" as const,
+    };
+  }),
+].sort((a, b) => b.pubDatetime.getTime() - a.pubDatetime.getTime());
+
+const formatDate = (date: Date) =>
+  new Intl.DateTimeFormat("zh-CN", { year: "numeric", month: "short", day: "numeric" }).format(date);
 ---
 
-<Layout title="Posts">
+<Layout title="文章管理">
   <!-- Header -->
   <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-    <h1 class="text-2xl font-semibold" data-i18n="admin.posts">Posts</h1>
-    <a
-      href="/admin/posts/new"
-      class="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90"
-    >
-      <Plus className="h-4 w-4" />
-      <span data-i18n="admin.newPost">New Post</span>
+    <h1 class="text-2xl font-semibold">文章管理</h1>
+    <a href="/admin/posts/new" class="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90">
+      + 新建文章
     </a>
   </div>
 
   <!-- Filters -->
   <div class="mb-6 flex flex-col gap-4 sm:flex-row">
     <div class="relative flex-1">
-      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40" />
       <input
         type="text"
         id="post-search"
-        placeholder="Search posts..."
-        class="w-full rounded-lg border border-border bg-background py-2 pl-10 pr-4 focus:border-accent focus:outline-none"
+        placeholder="搜索文章..."
+        class="w-full rounded-lg border border-border bg-background py-2 pl-4 pr-4 focus:border-accent focus:outline-none"
       />
     </div>
-    
-    <select
-      id="status-filter"
-      class="rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none"
-    >
-      <option value="all">All Status</option>
-      <option value="published">Published</option>
-      <option value="draft">Draft</option>
+    <select id="status-filter" class="rounded-lg border border-border bg-background px-4 py-2 focus:border-accent focus:outline-none">
+      <option value="all">全部状态</option>
+      <option value="published">已发布</option>
+      <option value="draft">草稿</option>
     </select>
   </div>
 
@@ -59,119 +77,107 @@ const formatDate = (date: Date) => {
     <table class="w-full" id="posts-table">
       <thead class="border-b border-border bg-muted/50">
         <tr>
-          <th class="px-6 py-3 text-left text-sm font-medium text-foreground/60">Title</th>
-          <th class="px-6 py-3 text-left text-sm font-medium text-foreground/60">Status</th>
-          <th class="px-6 py-3 text-left text-sm font-medium text-foreground/60">Tags</th>
-          <th class="px-6 py-3 text-left text-sm font-medium text-foreground/60">Date</th>
-          <th class="px-6 py-3 text-right text-sm font-medium text-foreground/60">Actions</th>
+          <th class="px-6 py-3 text-left text-sm font-medium text-foreground/60">标题</th>
+          <th class="px-6 py-3 text-left text-sm font-medium text-foreground/60">状态</th>
+          <th class="px-6 py-3 text-left text-sm font-medium text-foreground/60">标签</th>
+          <th class="px-6 py-3 text-left text-sm font-medium text-foreground/60">来源</th>
+          <th class="px-6 py-3 text-left text-sm font-medium text-foreground/60">日期</th>
+          <th class="px-6 py-3 text-right text-sm font-medium text-foreground/60">操作</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-border">
-        {sortedPosts.map((post) => (
-          <tr key={post.id} class="post-row hover:bg-muted/30" data-status={post.data.draft ? "draft" : "published"} data-title={post.data.title.toLowerCase()}>
+        {allPosts.map(post => (
+          <tr class="post-row hover:bg-muted/30" data-status={post.draft ? "draft" : "published"} data-title={post.title.toLowerCase()} data-slug={post.slug} data-source={post.source}>
             <td class="px-6 py-4">
-              <a
-                href={`/blog/${post.slug}/`}
-                target="_blank"
-                class="font-medium hover:text-accent"
-              >
-                {post.data.title}
-              </a>
+              <span class="font-medium">{post.title}</span>
             </td>
             <td class="px-6 py-4">
-              <span
-                class={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                  post.data.draft
-                    ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-                    : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                }`}
-              >
-                {post.data.draft ? "Draft" : "Published"}
+              <span class:list={[
+                "inline-flex rounded-full px-2 py-1 text-xs font-medium",
+                post.draft ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800",
+              ]}>
+                {post.draft ? "草稿" : "已发布"}
               </span>
             </td>
             <td class="px-6 py-4">
               <div class="flex flex-wrap gap-1">
-                {post.data.tags?.map((tag) => (
-                  <span
-                    key={tag}
-                    class="rounded bg-muted px-2 py-0.5 text-xs"
-                  >
-                    {tag}
-                  </span>
+                {post.tags.slice(0, 3).map(tag => (
+                  <span class="rounded bg-muted px-2 py-0.5 text-xs">{tag}</span>
                 ))}
+                {post.tags.length > 3 && (
+                  <span class="text-xs text-foreground/40">+{post.tags.length - 3}</span>
+                )}
               </div>
             </td>
             <td class="px-6 py-4 text-sm text-foreground/60">
-              {formatDate(post.data.pubDatetime)}
+              {post.source === "md" ? "MD" : "DB"}
+            </td>
+            <td class="px-6 py-4 text-sm text-foreground/60">
+              {formatDate(post.pubDatetime)}
             </td>
             <td class="px-6 py-4 text-right">
               <div class="flex justify-end gap-2">
-                <a
-                  href={`/admin/posts/${post.slug}`}
-                  class="rounded p-1 hover:bg-muted"
-                  title="Edit"
-                >
-                  <Edit className="h-4 w-4" />
-                </a>
-                <a
-                  href={`/blog/${post.slug}/`}
-                  target="_blank"
-                  class="rounded p-1 hover:bg-muted"
-                  title="View"
-                >
-                  <Eye className="h-4 w-4" />
-                </a>
-                <button
-                  class="rounded p-1 hover:bg-muted text-red-500"
-                  title="Delete"
-                  data-post-id={post.id}
-                  onclick="deletePost(this)"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <a href={`/admin/posts/${post.slug}`} class="text-sm text-accent hover:underline">编辑</a>
+                {!post.draft && (
+                  <a href={`/blog/${post.slug}/`} target="_blank" class="text-sm text-foreground/60 hover:text-foreground">查看</a>
+                )}
+                {post.source === "db" && (
+                  <button class="delete-btn text-sm text-red-500 hover:text-red-700" data-slug={post.slug}>删除</button>
+                )}
               </div>
             </td>
           </tr>
         ))}
+        {allPosts.length === 0 && (
+          <tr>
+            <td colspan="6" class="px-6 py-8 text-center text-foreground/60">暂无文章</td>
+          </tr>
+        )}
       </tbody>
     </table>
   </div>
-
-  <script>
-    // Search functionality
-    const searchInput = document.getElementById('post-search');
-    const statusFilter = document.getElementById('status-filter');
-    const rows = document.querySelectorAll('.post-row');
-
-    function filterPosts() {
-      const searchTerm = searchInput?.value.toLowerCase() || '';
-      const status = statusFilter?.value || 'all';
-
-      rows.forEach(row => {
-        const title = row.getAttribute('data-title') || '';
-        const postStatus = row.getAttribute('data-status') || '';
-        
-        const matchesSearch = title.includes(searchTerm);
-        const matchesStatus = status === 'all' || postStatus === status;
-        
-        if (matchesSearch && matchesStatus) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
-      });
-    }
-
-    searchInput?.addEventListener('input', filterPosts);
-    statusFilter?.addEventListener('change', filterPosts);
-
-    // Delete post
-    async function deletePost(button) {
-      if (!confirm('Are you sure you want to delete this post?')) return;
-      
-      const postId = button.getAttribute('data-post-id');
-      // TODO: Implement delete API call
-      alert('Delete functionality coming soon!');
-    }
-  </script>
 </Layout>
+
+<script>
+  const searchInput = document.getElementById('post-search') as HTMLInputElement | null;
+  const statusFilter = document.getElementById('status-filter') as HTMLSelectElement | null;
+  const rows = document.querySelectorAll('.post-row');
+
+  function filterPosts() {
+    const searchTerm = searchInput?.value.toLowerCase() || '';
+    const status = statusFilter?.value || 'all';
+
+    rows.forEach(row => {
+      const el = row as HTMLElement;
+      const title = el.dataset.title || '';
+      const postStatus = el.dataset.status || '';
+      const matchesSearch = title.includes(searchTerm);
+      const matchesStatus = status === 'all' || postStatus === status;
+      el.style.display = matchesSearch && matchesStatus ? '' : 'none';
+    });
+  }
+
+  searchInput?.addEventListener('input', filterPosts);
+  statusFilter?.addEventListener('change', filterPosts);
+
+  // Delete post (only for DB posts)
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const slug = (btn as HTMLElement).dataset.slug;
+      if (!slug || !confirm(`确定要删除文章 "${slug}" 吗？此操作不可撤销。`)) return;
+
+      try {
+        const res = await fetch(`/api/admin/posts/${slug}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          const row = btn.closest('tr');
+          row?.remove();
+        } else {
+          alert('删除失败: ' + (data.error || '未知错误'));
+        }
+      } catch {
+        alert('删除请求失败');
+      }
+    });
+  });
+</script>

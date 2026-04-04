@@ -1,58 +1,66 @@
 import type { APIRoute } from "astro";
+import { getD1, PostsRepo } from "@/db";
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
+    const db = getD1(locals);
+    if (!db) {
+      return new Response(
+        JSON.stringify({ error: "Database not available" }),
+        { status: 503, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const data = await request.json();
     const { title, slug, description, tags, content, action } = data;
 
-    // Validate required fields
     if (!title || !content) {
-      return new Response("Title and content are required", { status: 400 });
+      return new Response(
+        JSON.stringify({ error: "Title and content are required" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
-    // Generate slug if not provided
-    const finalSlug = slug || title
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .substring(0, 50);
+    const finalSlug =
+      slug ||
+      title
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .substring(0, 50);
 
-    // Create post data
-    const postData = {
+    // Check for slug conflict
+    const existing = await PostsRepo.findBySlug(db, finalSlug);
+    if (existing) {
+      return new Response(
+        JSON.stringify({ error: "A post with this slug already exists" }),
+        { status: 409, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const post = await PostsRepo.create(db, {
+      slug: finalSlug,
       title,
       description: description || "",
-      pubDatetime: new Date().toISOString(),
-      draft: action === "draft",
+      content,
       tags: tags || [],
-    };
-
-    // In a real implementation, you would:
-    // 1. Save to database (Cloudflare D1)
-    // 2. Or use GitHub API to commit the file
-    // 3. Or store in KV and trigger a rebuild
-
-    // For now, return success (implement actual storage later)
-    console.log("Creating post:", {
-      slug: finalSlug,
-      ...postData,
-      contentLength: content.length,
+      draft: action === "draft",
+      pubDatetime: new Date().toISOString(),
     });
 
     return new Response(
       JSON.stringify({
         success: true,
         slug: finalSlug,
+        post,
         message: "Post created successfully",
       }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error creating post:", error);
+    const message = error instanceof Error ? error.message : "Failed to create post";
     return new Response(
-      JSON.stringify({ error: "Failed to create post" }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
