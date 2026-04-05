@@ -16,6 +16,7 @@ export interface UnifiedPost {
   title: string;
   description: string;
   content?: string;
+  renderedHtml?: string;
   tags: string[];
   author: string;
   draft: boolean;
@@ -30,6 +31,8 @@ function mdPostToUnified(post: CollectionEntry<"blog">): UnifiedPost {
     slug: post.id,
     title: post.data.title,
     description: post.data.description,
+    content: post.body ?? undefined,
+    renderedHtml: (post as any).rendered?.html ?? undefined,
     tags: post.data.tags,
     author: post.data.author,
     draft: post.data.draft ?? false,
