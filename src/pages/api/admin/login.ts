@@ -1,15 +1,11 @@
 import type { APIRoute } from "astro";
 import { timingSafeEqual, createSessionCookie } from "@/utils/auth";
+import { getAdminKey } from "@/utils/getCfEnv";
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ request, cookies, redirect, locals }) => {
-  // Try runtime env first (Cloudflare Workers), then process.env
-  const runtimeEnv = (locals as App.Locals).runtime?.env;
-  const configuredKey =
-    (runtimeEnv?.ADMIN_ACCESS_KEY as string | undefined) ??
-    process.env.ADMIN_ACCESS_KEY ??
-    "local-admin-key";
+export const POST: APIRoute = async ({ request, cookies, redirect }) => {
+  const configuredKey = getAdminKey();
 
   let key = "";
   const contentType = request.headers.get("content-type") ?? "";

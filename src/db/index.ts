@@ -60,20 +60,38 @@ export interface DbMedia {
   created_at: string;
 }
 
+// ─── Cloudflare Env Accessor ─────────────────────────────────────
+
+import { getCfEnv } from "@/utils/getCfEnv";
+
 // ─── D1 Binding Accessor ─────────────────────────────────────────
 
-export function getD1(locals: App.Locals): D1Database | null {
-  const runtime = locals.runtime;
-  if (!runtime?.env) return null;
-  return (runtime.env as Record<string, unknown>).DB as D1Database | null;
+export function getD1(_locals?: App.Locals): D1Database | null {
+  const cfEnv = getCfEnv();
+  if (cfEnv?.DB) return cfEnv.DB as D1Database;
+
+  // Legacy fallback for older Astro/adapter versions
+  try {
+    const runtime = (_locals as { runtime?: { env?: Record<string, unknown> } })?.runtime;
+    if (runtime?.env?.DB) return runtime.env.DB as D1Database;
+  } catch { /* Astro v6 throws — expected */ }
+
+  return null;
 }
 
 // ─── R2 Binding Accessor ─────────────────────────────────────────
 
-export function getR2(locals: App.Locals): R2Bucket | null {
-  const runtime = locals.runtime;
-  if (!runtime?.env) return null;
-  return (runtime.env as Record<string, unknown>).MEDIA as R2Bucket | null;
+export function getR2(_locals?: App.Locals): R2Bucket | null {
+  const cfEnv = getCfEnv();
+  if (cfEnv?.MEDIA) return cfEnv.MEDIA as R2Bucket;
+
+  // Legacy fallback
+  try {
+    const runtime = (_locals as { runtime?: { env?: Record<string, unknown> } })?.runtime;
+    if (runtime?.env?.MEDIA) return runtime.env.MEDIA as R2Bucket;
+  } catch { /* Astro v6 throws — expected */ }
+
+  return null;
 }
 
 // ─── Posts Repository ─────────────────────────────────────────────

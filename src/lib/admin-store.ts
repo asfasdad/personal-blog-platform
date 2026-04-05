@@ -85,10 +85,19 @@ const toId = () => {
 };
 
 const getKv = (locals?: RuntimeLocals): KVNamespace | null => {
+  // Try cloudflare:workers env first (Astro v6+)
+  try {
+    const cfEnv = globalThis.__cfEnvCache;
+    if (cfEnv) {
+      const kv = (cfEnv as Record<string, unknown>).BLOG_KV ?? (cfEnv as Record<string, unknown>).SESSION;
+      if (kv) return kv as KVNamespace;
+    }
+  } catch { /* not available */ }
+
+  // Legacy fallback
   try {
     return locals?.runtime?.env?.BLOG_KV ?? locals?.runtime?.env?.SESSION ?? null;
-  } catch (error) {
-    void error;
+  } catch {
     return null;
   }
 };
