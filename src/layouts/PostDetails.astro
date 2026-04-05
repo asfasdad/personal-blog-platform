@@ -123,26 +123,41 @@ const relatedPosts = posts
       >
       <EditPost {hideEditPost} {post} class="max-sm:hidden" />
     </div>
-    <div class="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_16rem]">
+    <div class="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[16rem_minmax(0,1fr)] xl:grid-cols-[16rem_minmax(0,1fr)_16rem]">
+      <!-- TOC sidebar -->
+      <aside
+        id="toc-sidebar"
+        class="hidden lg:block"
+        aria-labelledby="toc-title"
+        data-pagefind-ignore
+      >
+        <div class="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto">
+          <div class="rounded-xl border border-border bg-surface p-4 shadow-[var(--shadow-soft)]">
+            <h2 id="toc-title" class="flex items-center justify-between text-lg font-semibold">
+              <span>目录</span>
+              <button
+                id="toc-toggle-all"
+                class="text-xs text-foreground/60 hover:text-accent"
+                aria-label="折叠目录"
+              >
+                折叠
+              </button>
+            </h2>
+            <nav id="post-toc" class="mt-3">
+              <p id="post-toc-empty" class="text-sm text-foreground/80">
+                标题链接将在此处显示。
+              </p>
+              <ul id="post-toc-list" class="space-y-1 text-sm"></ul>
+            </nav>
+          </div>
+        </div>
+      </aside>
+
       <article
         id="article"
         class="app-prose w-full max-w-app prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)"
         set:html={contentHtml}
       />
-
-      <aside
-        class="h-fit rounded-xl border border-border bg-surface p-4 shadow-[var(--shadow-soft)]"
-        aria-labelledby="toc-title"
-        data-pagefind-ignore
-      >
-        <h2 id="toc-title" class="text-lg font-semibold">目录</h2>
-        <nav id="post-toc" class="mt-3">
-          <p id="post-toc-empty" class="text-sm text-foreground/80">
-            标题链接将在此处显示。
-          </p>
-          <ul id="post-toc-list" class="space-y-2 text-sm"></ul>
-        </nav>
-      </aside>
     </div>
 
     <hr class="my-8 border-dashed" />
@@ -267,29 +282,168 @@ const relatedPosts = posts
   function buildTableOfContents() {
     const tocList = document.querySelector("#post-toc-list");
     const tocEmpty = document.querySelector("#post-toc-empty");
+    const toggleAllBtn = document.querySelector("#toc-toggle-all");
     const headings = Array.from(
       document.querySelectorAll("#article h2, #article h3, #article h4")
     );
 
-    if (!(tocList instanceof HTMLUListElement)) return;
+    if (!(tocList instanceof HTMLUListElement) || headings.length === 0) return;
 
     tocList.innerHTML = "";
 
-    for (const heading of headings) {
-      if (!(heading instanceof HTMLElement) || !heading.id) continue;
+    // Build tree: h2 -> [h3 -> [h4]]
+    const h2List = [];
+    let currentH2 = null;
+    let currentH3 = null;
+
+    for (const h of headings) {
+      const level = h.tagName;
+      if (level === "H2") {
+        currentH2 = { el: h, h3s: [] };
+        h2List.push(currentH2);
+        currentH3 = null;
+      } else if (level === "H3") {
+        if (currentH2) {
+          currentH3 = { el: h, h4s: [] };
+          currentH2.h3s.push(currentH3);
+        }
+      } else if (level === "H4") {
+        if (currentH3) {
+          currentH3.h4s.push(h);
+        } else if (currentH2) {
+          currentH3 = { el: h as any, h4s: [] };
+          currentH2.h3s.push(currentH3);
+          currentH3 = null;
+        }
+      }
+    }
+
+    // Render tree
+    function makeLink(el) {
+      if (!el.id) return null;
+      const a = document.createElement("a");
+      a.href = `#${el.id}`;
+      a.textContent = el.textContent ?? "";
+      return a;
+    }
+
+    function renderEntry(h2Entry) {
       const li = document.createElement("li");
-      const anchor = document.createElement("a");
-      anchor.href = `#${heading.id}`;
-      anchor.className =
-        "text-accent underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-accent";
-      anchor.textContent = heading.textContent ?? "Section";
-      li.appendChild(anchor);
+      const a = makeLink(h2Entry.el);
+      if (!a) return li;
+
+      a.className = "block py-1 pr-2 text-accent hover:underline leading-snug";
+      li.appendChild(a);
+
+      if (h2Entry.h3s.length > 0) {
+        const arrow = document.createElement("span");
+        arrow.className = "me-1 text-foreground/40 inline-block chevron";
+        arrow.textContent = "▾";
+        a.insertBefore(arrow, a.firstChild);
+        a.classList.add("toc-parent", "cursor-pointer");
+
+        const subUl = document.createElement("ul");
+        subUl.className = "ms-3 border-s border-border pl-3 mt-1 space-y-1";
+
+        for (const h3Entry of h2Entry.h3s) {
+          const h3Li = document.createElement("li");
+          const h3A = makeLink(h3Entry.el);
+          if (!h3A) continue;
+
+          h3A.className = "block py-0.5 pr-2 text-foreground/80 hover:text-accent text-xs leading-snug";
+          h3Li.appendChild(h3A);
+
+          if (h3Entry.h4s.length > 0) {
+            const h3Arrow = document.createElement("span");
+            h3Arrow.className = "me-1 text-foreground/30 inline-block chevron";
+            h3Arrow.textContent = "▾";
+            h3A.insertBefore(h3Arrow, h3A.firstChild);
+            h3A.classList.add("toc-parent", "cursor-pointer");
+
+            const h4Ul = document.createElement("ul");
+            h4Ul.className = "ms-3 border-s border-border pl-3 mt-0.5 space-y-0.5";
+
+            for (const h4 of h3Entry.h4s) {
+              if (!h4.id) continue;
+              const h4Li = document.createElement("li");
+              const h4A = document.createElement("a");
+              h4A.href = `#${h4.id}`;
+              h4A.textContent = h4.textContent ?? "";
+              h4A.className = "block py-0.5 pr-2 text-foreground/60 hover:text-accent text-xs leading-snug";
+              h4Li.appendChild(h4A);
+              h4Ul.appendChild(h4Li);
+            }
+            h3Li.appendChild(h4Ul);
+          }
+
+          subUl.appendChild(h3Li);
+        }
+
+        li.appendChild(subUl);
+      }
+
+      return li;
+    }
+
+    for (const entry of h2List) {
+      const li = renderEntry(entry);
       tocList.appendChild(li);
     }
 
     if (tocEmpty instanceof HTMLElement) {
       tocEmpty.classList.toggle("hidden", tocList.childElementCount > 0);
     }
+
+    // Collapse: click parent to toggle sub-list
+    tocList.querySelectorAll(".toc-parent").forEach(parent => {
+      parent.addEventListener("click", e => {
+        const next = parent.nextElementSibling;
+        if (next && next.tagName === "UL") {
+          e.preventDefault();
+          next.classList.toggle("hidden");
+          const chevron = parent.querySelector(".chevron");
+          if (chevron) chevron.textContent = next.classList.contains("hidden") ? "▸" : "▾";
+        }
+      });
+    });
+
+    // Toggle all
+    if (toggleAllBtn instanceof HTMLElement) {
+      toggleAllBtn.addEventListener("click", () => {
+        const subs = tocList.querySelectorAll(":scope > li > ul");
+        const allHidden = Array.from(subs).every(s => s.classList.contains("hidden"));
+        subs.forEach(s => {
+          s.classList.toggle("hidden", !allHidden);
+          const chevron = s.previousElementSibling?.querySelector(".chevron");
+          if (chevron) chevron.textContent = allHidden ? "▾" : "▸";
+        });
+        toggleAllBtn.textContent = allHidden ? "展开" : "折叠";
+      });
+    }
+
+    // Highlight active heading on scroll
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(entry => {
+          const id = entry.target.id;
+          if (!id) return;
+          const link = tocList.querySelector(`a[href="#${id}"]`);
+          if (entry.isIntersecting) {
+            tocList.querySelectorAll("a").forEach(a => {
+              a.classList.remove("text-accent", "font-semibold");
+              a.classList.add("text-foreground/80");
+            });
+            if (link) {
+              link.classList.remove("text-foreground/80");
+              link.classList.add("text-accent", "font-semibold");
+            }
+          }
+        });
+      },
+      { rootMargin: "-15% 0px -75% 0px" }
+    );
+
+    headings.forEach(h => { if (h.id) observer.observe(h); });
   }
   buildTableOfContents();
 
