@@ -46,7 +46,7 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
       draft: draft ?? false,
     });
 
-    if (!updated) {
+    if (!post) {
       return new Response(JSON.stringify({ error: "Post not found" }), {
         status: 404,
         headers: { "Content-Type": "application/json" },

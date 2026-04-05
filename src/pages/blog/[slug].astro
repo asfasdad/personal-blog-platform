@@ -19,32 +19,24 @@ import { marked } from "marked";
 
 export const prerender = false;
 
-// Generate static paths for markdown posts
-export async function getStaticPaths() {
-  const posts = await getCollection("blog");
-  const sortedPosts = getSortedPosts(posts);
-
-  return sortedPosts.map(post => ({
-    params: { slug: getPath(post.id, post.filePath, false) },
-    props: { post, posts: sortedPosts },
-  }));
-}
-
 const { slug } = Astro.params;
 
-// Try to get from static props first (markdown post)
+// Try to find in markdown content collection first
 let mdPost: CollectionEntry<"blog"> | null = null;
 let mdPosts: CollectionEntry<"blog">[] = [];
 let dbPost: Awaited<ReturnType<typeof PostsRepo.findBySlug>> = null;
 
-try {
-  const props = Astro.props as { post?: CollectionEntry<"blog">; posts?: CollectionEntry<"blog">[] };
-  if (props.post) {
-    mdPost = props.post;
-    mdPosts = props.posts ?? [];
-  }
-} catch {
-  // Not a static path, try D1
+const allMdPosts = await getCollection("blog");
+const sortedMdPosts = getSortedPosts(allMdPosts);
+
+// Match by slug (the post id or path segment)
+mdPost = sortedMdPosts.find(p => {
+  const postSlug = getPath(p.id, p.filePath, false);
+  return postSlug === slug;
+}) ?? null;
+
+if (mdPost) {
+  mdPosts = sortedMdPosts;
 }
 
 // If no markdown post found, try D1

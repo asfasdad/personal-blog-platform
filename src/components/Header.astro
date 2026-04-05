@@ -27,7 +27,7 @@ const isActive = (path: string) => {
   href="#main-content"
   class="absolute start-10 -top-full z-50 rounded-full bg-surface px-4 py-2 text-accent shadow-sm backdrop-blur-lg transition-all focus:top-4"
 >
-  <span data-i18n="ui.skipToContent">Skip to content</span>
+  <span data-i18n="ui.skipToContent">跳转到内容</span>
 </a>
 
 <header
@@ -73,12 +73,12 @@ const isActive = (path: string) => {
       >
         <li class="col-span-2">
           <a href="/blog" class:list={{ "active-nav": isActive("/blog") }}>
-            <span data-i18n="nav.blog">Blog</span>
+            <span data-i18n="nav.blog">博客</span>
           </a>
         </li>
         <li class="col-span-2">
           <a href="/tags" class:list={{ "active-nav": isActive("/tags") }}>
-            <span data-i18n="nav.tags">Tags</span>
+            <span data-i18n="nav.tags">标签</span>
           </a>
         </li>
         <li class="col-span-2">
@@ -86,12 +86,12 @@ const isActive = (path: string) => {
             href="/projects"
             class:list={{ "active-nav": isActive("/projects") }}
           >
-            <span data-i18n="nav.projects">Projects</span>
+            <span data-i18n="nav.projects">项目</span>
           </a>
         </li>
         <li class="col-span-2">
           <a href="/about" class:list={{ "active-nav": isActive("/about") }}>
-            <span data-i18n="nav.about">About</span>
+            <span data-i18n="nav.about">关于</span>
           </a>
         </li>
         {
@@ -110,7 +110,7 @@ const isActive = (path: string) => {
                 data-i18n-attr="title:nav.archives,aria-label:nav.archives"
               >
                 <IconArchive class="hidden sm:inline-block" />
-                <span class="sm:sr-only" data-i18n="nav.archives">Archives</span>
+                <span class="sm:sr-only" data-i18n="nav.archives">归档</span>
               </LinkButton>
             </li>
           )
@@ -145,7 +145,7 @@ const isActive = (path: string) => {
             data-i18n-attr="title:nav.search,aria-label:nav.search"
           >
             <IconSearch />
-            <span class="sr-only" data-i18n="nav.search">Search</span>
+            <span class="sr-only" data-i18n="nav.search">搜索</span>
           </LinkButton>
         </li>
         {

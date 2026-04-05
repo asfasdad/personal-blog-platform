@@ -16,13 +16,13 @@ const visibleProjects = projects
   );
 ---
 
-<Layout title={`Projects | ${SITE.title}`}>
+<Layout title={`项目 | ${SITE.title}`}>
   <Header />
   <main id="main-content" class="app-layout">
-    <h1 class="text-2xl font-semibold sm:text-3xl">Projects</h1>
+    <h1 class="text-2xl font-semibold sm:text-3xl">项目</h1>
     {
       visibleProjects.length === 0 ? (
-        <p class="mt-6">Projects will appear here once published.</p>
+        <p class="mt-6 text-foreground/60">暂无项目，敬请期待。</p>
       ) : (
         <ul class="mt-6 space-y-6">
           {visibleProjects.map(project => (
@@ -36,7 +36,7 @@ const visibleProjects = projects
                     href={project.data.website}
                     class="text-accent underline-offset-4 hover:underline"
                   >
-                    Visit
+                    访问
                   </a>
                 )}
                 {project.data.repo && (
@@ -44,7 +44,7 @@ const visibleProjects = projects
                     href={project.data.repo}
                     class="text-accent underline-offset-4 hover:underline"
                   >
-                    Repository
+                    源码
                   </a>
                 )}
               </div>
